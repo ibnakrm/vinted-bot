@@ -1,0 +1,15 @@
+{
+  "status": 200,
+  "statusText": "OK",
+  "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "x-anon-id": "[REDACTED]"
+  },
+  "setCookie": [
+    "v_udt=[REDACTED]; Path=/; HttpOnly",
+    "anon_id=[REDACTED]; Path=/"
+  ],
+  "data": "<!doctype html><html lang=\"fr-FR\"><head></head><body>sanitised fixture</body></html>",
+  "finalUrl": "https://www.vinted.fr/",
+  "redirected": false
+}

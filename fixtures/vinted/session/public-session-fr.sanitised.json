@@ -1,0 +1,51 @@
+{
+  "capability": "public_session_acquisition",
+  "status": "VERIFIED",
+  "verifiedAt": "2026-09-21T11:17:36.781Z",
+  "market": "FR",
+  "marketUrl": "https://www.vinted.fr",
+  "request": {
+    "method": "GET",
+    "host": "site",
+    "hostname": "www.vinted.fr",
+    "path": "/"
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "contentType": "text/html; charset=utf-8",
+    "finalUrl": "https://www.vinted.fr/",
+    "redirected": false,
+    "durationMs": 878,
+    "selectedHeaders": {
+      "content-type": "text/html; charset=utf-8",
+      "set-cookie": "[REDACTED]",
+      "x-anon-id": "[REDACTED]",
+      "x-user-iso-locale": "fr-FR",
+      "x-v-udt": "[REDACTED]",
+      "x-screen": "news_feed"
+    }
+  },
+  "received": {
+    "cookieNames": [
+      "__cf_bm",
+      "access_token_web",
+      "anon_id",
+      "anonymous-iso-locale",
+      "datadome",
+      "non_dot_com_www_domain_cookie_buster",
+      "refresh_token_web",
+      "v_udt"
+    ],
+    "cookieCount": 8,
+    "anonId": "[REDACTED]",
+    "locale": "fr-FR",
+    "acquiredAt": "2026-09-21T11:17:36.778Z"
+  },
+  "sessionUsability": {
+    "isEmpty": false,
+    "isUsable": true,
+    "rule": "usable when at least one public network identity signal is present: Set-Cookie-derived cookies or X-Anon-Id"
+  },
+  "diagnosticsRedactionChecked": true
+}

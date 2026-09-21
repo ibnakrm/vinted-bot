@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+coverage/
+.turbo/
+
+# Local tooling
+.tools/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Vinted/session research artifacts
+*.har
+*.trace
+session*.json
+cookies*.json
+fixtures/**/*.raw.json
+fixtures/**/private/
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
+# External research repositories kept locally only
+vinted-api-main/
+vinted-api-wrapper-master/
