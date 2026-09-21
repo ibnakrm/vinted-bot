@@ -1,4 +1,4 @@
-import { InvalidCatalogSearchResponseError } from "./errors.js";
+import { InvalidCatalogSearchInputError, InvalidCatalogSearchResponseError } from "./errors.js";
 import type { SearchItemsInput, SearchItemsPagination, SearchItemsResult, VintedSearchItem } from "./types.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -19,6 +19,18 @@ function optionalStringOrNumber(value: unknown): string | number | undefined {
   return typeof value === "string" || typeof value === "number" ? value : undefined;
 }
 
+function optionalFiniteNumber(value: number | undefined, fieldName: keyof SearchItemsInput): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Number.isFinite(value)) {
+    throw new InvalidCatalogSearchInputError(`${String(fieldName)} must be a finite number`);
+  }
+
+  return value;
+}
+
 function mapPrice(rawItem: UnknownRecord): VintedSearchItem["price"] {
   const price = rawItem.price;
   if (isRecord(price)) {
@@ -27,7 +39,7 @@ function mapPrice(rawItem: UnknownRecord): VintedSearchItem["price"] {
       return undefined;
     }
 
-    const mapped: NonNullable<VintedSearchItem["price"]> = { amount };
+    const mapped: NonNullable<VintedSearchItem["price"]> = { amount: String(amount) };
     const currency = optionalString(price.currency_code) ?? optionalString(price.currency);
     if (currency !== undefined) {
       mapped.currency = currency;
@@ -36,7 +48,7 @@ function mapPrice(rawItem: UnknownRecord): VintedSearchItem["price"] {
   }
 
   const amount = optionalStringOrNumber(price);
-  return amount === undefined ? undefined : { amount };
+  return amount === undefined ? undefined : { amount: String(amount) };
 }
 
 function mapImageUrl(rawItem: UnknownRecord): string | undefined {
@@ -49,30 +61,31 @@ function mapImageUrl(rawItem: UnknownRecord): string | undefined {
 }
 
 function mapBrand(rawItem: UnknownRecord): string | undefined {
-  const itemBox = rawItem.item_box;
-  if (isRecord(itemBox)) {
-    const firstLine = optionalString(itemBox.first_line);
-    if (firstLine !== undefined) {
-      return firstLine;
-    }
-  }
-
   return optionalString(rawItem.brand_title);
 }
 
 function mapSize(rawItem: UnknownRecord): string | undefined {
-  const explicitSize = optionalString(rawItem.size_title);
-  if (explicitSize !== undefined) {
-    return explicitSize;
-  }
+  return optionalString(rawItem.size_title);
+}
 
+function mapDisplayLines(rawItem: UnknownRecord): Pick<VintedSearchItem, "displayFirstLine" | "displaySecondLine"> {
   const itemBox = rawItem.item_box;
   if (!isRecord(itemBox)) {
-    return undefined;
+    return {};
   }
 
+  const display: Pick<VintedSearchItem, "displayFirstLine" | "displaySecondLine"> = {};
+  const firstLine = optionalString(itemBox.first_line);
   const secondLine = optionalString(itemBox.second_line);
-  return secondLine?.split("·")[0]?.trim();
+
+  if (firstLine !== undefined) {
+    display.displayFirstLine = firstLine;
+  }
+  if (secondLine !== undefined) {
+    display.displaySecondLine = secondLine;
+  }
+
+  return display;
 }
 
 function mapUserId(rawItem: UnknownRecord): string | number | undefined {
@@ -86,21 +99,41 @@ function mapUserId(rawItem: UnknownRecord): string | number | undefined {
 
 export function buildCatalogSearchQuery(input: SearchItemsInput): Record<string, string | number> {
   const query: Record<string, string | number> = {};
+  const priceFrom = optionalFiniteNumber(input.priceFrom, "priceFrom");
+  const priceTo = optionalFiniteNumber(input.priceTo, "priceTo");
+  const page = optionalFiniteNumber(input.page, "page");
+  const perPage = optionalFiniteNumber(input.perPage, "perPage");
+
+  if (priceFrom !== undefined && priceFrom < 0) {
+    throw new InvalidCatalogSearchInputError("priceFrom must be greater than or equal to 0");
+  }
+  if (priceTo !== undefined && priceTo < 0) {
+    throw new InvalidCatalogSearchInputError("priceTo must be greater than or equal to 0");
+  }
+  if (priceFrom !== undefined && priceTo !== undefined && priceFrom > priceTo) {
+    throw new InvalidCatalogSearchInputError("priceFrom must be less than or equal to priceTo");
+  }
+  if (page !== undefined && page < 1) {
+    throw new InvalidCatalogSearchInputError("page must be greater than or equal to 1");
+  }
+  if (perPage !== undefined && perPage < 1) {
+    throw new InvalidCatalogSearchInputError("perPage must be greater than or equal to 1");
+  }
 
   if (input.query !== undefined && input.query.length > 0) {
     query.search_text = input.query;
   }
-  if (input.priceFrom !== undefined) {
-    query.price_from = input.priceFrom;
+  if (priceFrom !== undefined) {
+    query.price_from = priceFrom;
   }
-  if (input.priceTo !== undefined) {
-    query.price_to = input.priceTo;
+  if (priceTo !== undefined) {
+    query.price_to = priceTo;
   }
-  if (input.page !== undefined) {
-    query.page = input.page;
+  if (page !== undefined) {
+    query.page = page;
   }
-  if (input.perPage !== undefined) {
-    query.per_page = input.perPage;
+  if (perPage !== undefined) {
+    query.per_page = perPage;
   }
 
   return query;
@@ -147,6 +180,8 @@ export function mapCatalogSearchItem(value: unknown): VintedSearchItem {
   if (size !== undefined) {
     item.size = size;
   }
+
+  Object.assign(item, mapDisplayLines(value));
 
   const userId = mapUserId(value);
   if (userId !== undefined) {

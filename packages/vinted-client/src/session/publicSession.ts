@@ -12,6 +12,27 @@ import {
 import type { VintedSession } from "./VintedSession.js";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
+const KNOWN_VINTED_MARKETS: Readonly<Record<string, string>> = {
+  "www.vinted.at": "AT",
+  "www.vinted.be": "BE",
+  "www.vinted.co.uk": "GB",
+  "www.vinted.cz": "CZ",
+  "www.vinted.de": "DE",
+  "www.vinted.dk": "DK",
+  "www.vinted.es": "ES",
+  "www.vinted.fi": "FI",
+  "www.vinted.fr": "FR",
+  "www.vinted.hu": "HU",
+  "www.vinted.it": "IT",
+  "www.vinted.lt": "LT",
+  "www.vinted.lu": "LU",
+  "www.vinted.nl": "NL",
+  "www.vinted.pl": "PL",
+  "www.vinted.pt": "PT",
+  "www.vinted.ro": "RO",
+  "www.vinted.se": "SE",
+  "www.vinted.sk": "SK"
+};
 
 export interface VintedMarket {
   siteBaseUrl: string;
@@ -22,6 +43,7 @@ export interface VintedMarket {
 
 export interface PublicSessionAcquisitionOptions {
   marketUrl: string;
+  acceptLanguage?: string;
   transport?: VintedTransport;
   diagnosticSink?: DiagnosticSink;
   timeoutMs?: number;
@@ -48,8 +70,8 @@ export function isSessionEmpty(session: VintedSession): boolean {
   );
 }
 
-export function isSessionUsable(session: VintedSession): boolean {
-  return Object.keys(session.cookies).length > 0 || session.anonId !== undefined;
+export function hasSessionMaterial(session: VintedSession): boolean {
+  return Object.keys(session.cookies).length > 0 || session.anonId !== undefined || session.csrfToken !== undefined;
 }
 
 export function parseVintedMarketUrl(value: string): VintedMarket {
@@ -60,20 +82,19 @@ export function parseVintedMarketUrl(value: string): VintedMarket {
     throw new InvalidMarketUrlError(value);
   }
 
-  if (url.protocol !== "https:" || !url.hostname.startsWith("www.vinted.")) {
+  const hostname = url.hostname.toLowerCase();
+  const market = KNOWN_VINTED_MARKETS[hostname];
+  if (url.protocol !== "https:" || market === undefined) {
     throw new InvalidMarketUrlError(value);
   }
 
-  const market = url.hostname.slice("www.vinted.".length);
-  if (market.length === 0) {
-    throw new InvalidMarketUrlError(value);
-  }
+  const apiHostname = hostname.replace(/^www\./, "api.");
 
   return {
-    siteBaseUrl: `https://${url.hostname}`,
-    apiBaseUrl: `https://api.vinted.${market}`,
-    hostname: url.hostname,
-    market: market.toUpperCase()
+    siteBaseUrl: `https://${hostname}`,
+    apiBaseUrl: `https://${apiHostname}`,
+    hostname,
+    market
   };
 }
 
@@ -167,16 +188,21 @@ export async function acquirePublicSession(
   const transport = new DiagnosticTransport(baseTransport, sinks);
 
   let response: VintedResponse<string>;
+  const headers: Record<string, string> = {
+    accept: "text/html,application/xhtml+xml"
+  };
+
+  if (options.acceptLanguage !== undefined && options.acceptLanguage.length > 0) {
+    headers["accept-language"] = options.acceptLanguage;
+  }
+
   try {
     response = await transport.request<string>({
       method: "GET",
       host: "site",
       hostname: market.hostname,
       path: "/",
-      headers: {
-        accept: "text/html,application/xhtml+xml",
-        "accept-language": "fr-FR,fr;q=0.9,en;q=0.8"
-      },
+      headers,
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS
     });
   } catch (error) {
@@ -191,7 +217,7 @@ export async function acquirePublicSession(
   }
 
   const session = createSessionFromPublicResponse(response, options.now?.() ?? new Date());
-  if (!isSessionUsable(session)) {
+  if (!hasSessionMaterial(session)) {
     throw new MissingUsableSessionInformationError();
   }
 

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { redactDiagnosticValue, redactHeaders, redactObject } from "./redact.js";
+import {
+  redactDiagnosticText,
+  redactDiagnosticUrl,
+  redactDiagnosticValue,
+  redactHeaders,
+  redactObject
+} from "./redact.js";
 
 describe("diagnostic redaction", () => {
   it("redacts sensitive headers without changing safe headers", () => {
@@ -63,5 +69,17 @@ describe("diagnostic redaction", () => {
 
   it("redacts anonymous IDs because they can identify a session context", () => {
     expect(redactDiagnosticValue("X-Anon-Id", "anon-real-value")).toBe("[REDACTED]");
+  });
+
+  it("redacts sensitive query params in diagnostic URLs while keeping safe params", () => {
+    expect(redactDiagnosticUrl("https://api.vinted.fr/svc-catalogue/items?token=abc&session_id=xyz&page=1")).toBe(
+      "https://api.vinted.fr/svc-catalogue/items?token=[REDACTED]&session_id=[REDACTED]&page=1"
+    );
+  });
+
+  it("redacts secrets embedded in diagnostic text", () => {
+    expect(redactDiagnosticText("request failed cookie=session-secret token=abc Bearer live-token page=1")).toBe(
+      "request failed cookie=[REDACTED] token=[REDACTED] Bearer [REDACTED] page=1"
+    );
   });
 });

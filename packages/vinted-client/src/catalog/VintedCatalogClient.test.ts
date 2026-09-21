@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { VintedCatalogClient } from "./VintedCatalogClient.js";
-import { CatalogSearchHttpError, CatalogSearchSessionError, InvalidCatalogSearchResponseError } from "./errors.js";
+import {
+  CatalogSearchHttpError,
+  CatalogSearchSessionError,
+  InvalidCatalogSearchInputError,
+  InvalidCatalogSearchResponseError
+} from "./errors.js";
 import { buildCatalogSearchQuery, mapCatalogSearchItem, mapCatalogSearchResponse } from "./mappers.js";
 import type { VintedMarket } from "../session/publicSession.js";
 import type { VintedSession } from "../session/VintedSession.js";
@@ -59,6 +64,23 @@ describe("buildCatalogSearchQuery", () => {
       per_page: 10
     });
   });
+
+  it("rejects invalid search inputs before building Vinted query params", () => {
+    const invalidInputs = [
+      { priceFrom: -1 },
+      { priceTo: -1 },
+      { priceFrom: 20, priceTo: 10 },
+      { page: 0 },
+      { perPage: 0 },
+      { page: Number.NaN },
+      { perPage: Number.POSITIVE_INFINITY },
+      { priceFrom: Number.NEGATIVE_INFINITY }
+    ];
+
+    for (const input of invalidInputs) {
+      expect(() => buildCatalogSearchQuery(input)).toThrow(InvalidCatalogSearchInputError);
+    }
+  });
 });
 
 describe("catalog search response mapping", () => {
@@ -74,8 +96,8 @@ describe("catalog search response mapping", () => {
           },
           url: "https://www.vinted.fr/items/123456789-sanitised",
           imageUrl: "https://images.example.invalid/sanitised.webp",
-          brand: "Lacoste",
-          size: "M",
+          displayFirstLine: "Lacoste",
+          displaySecondLine: "M · Très bon état",
           userId: 987654321
         }
       ],
@@ -90,6 +112,34 @@ describe("catalog search response mapping", () => {
 
   it("allows optional item fields to be absent", () => {
     expect(mapCatalogSearchItem({ id: "minimal" })).toEqual({ id: "minimal" });
+  });
+
+  it("prefers explicit business fields and keeps item_box values as display metadata only", () => {
+    expect(
+      mapCatalogSearchItem({
+        id: 1,
+        brand_title: "Explicit Brand",
+        size_title: "Explicit Size",
+        price: {
+          amount: 12,
+          currency_code: "EUR"
+        },
+        item_box: {
+          first_line: "Display Brand",
+          second_line: "Display Size · Condition"
+        }
+      })
+    ).toEqual({
+      id: 1,
+      brand: "Explicit Brand",
+      size: "Explicit Size",
+      price: {
+        amount: "12",
+        currency: "EUR"
+      },
+      displayFirstLine: "Display Brand",
+      displaySecondLine: "Display Size · Condition"
+    });
   });
 
   it("supports empty responses", () => {

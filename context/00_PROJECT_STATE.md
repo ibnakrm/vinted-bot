@@ -18,7 +18,8 @@ Next: `VNT-005 - Minimal private web UI: search`
 - `VNT-002 - Implement redacted HTTP diagnostics` is complete.
 - `VNT-003 - Research/implement public session acquisition` is complete for FR public anonymous session acquisition.
 - `VNT-004 - Implement current catalog search adapter` is complete for FR public search with text, price and pagination.
+- `VNT-004A - Harden verified public client foundation` is complete: diagnostics sanitize error messages/final URLs, public session acquisition no longer hardcodes FR language, catalog inputs are validated, `item_box` is display-only metadata, and `nvm use` validates Node 24.21.0/npm 11.19.0 locally.
 
 ## Current Priority
 
-Prepare `VNT-005` minimal private web UI search shell. Keep saved searches, polling and worker behavior out of scope until later backlog items.
+Next: prepare `VNT-005` minimal private web UI search shell. Keep saved searches, polling and worker behavior out of scope until later backlog items.

@@ -5,8 +5,8 @@ import {
   createSessionFromPublicResponse,
   extractCsrfToken,
   extractHtmlLocale,
+  hasSessionMaterial,
   isSessionEmpty,
-  isSessionUsable,
   parseSetCookieHeaders,
   parseVintedMarketUrl
 } from "./publicSession.js";
@@ -65,7 +65,7 @@ describe("public session parsing", () => {
       locale: "fr-FR",
       acquiredAt: "2026-09-21T09:00:00.000Z"
     });
-    expect(isSessionUsable(session)).toBe(true);
+    expect(hasSessionMaterial(session)).toBe(true);
   });
 
   it("parses Set-Cookie headers into cookie name/value pairs", () => {
@@ -94,9 +94,9 @@ describe("public session parsing", () => {
     expect(extractCsrfToken('<meta content="csrf-live" name="csrf-token">')).toBe("csrf-live");
   });
 
-  it("classifies partial and unusable sessions", () => {
+  it("classifies empty sessions and public session material without defining adapter-level requirements", () => {
     expect(
-      isSessionUsable({
+      hasSessionMaterial({
         cookies: {},
         anonId: "anon-live",
         acquiredAt: "2026-09-21T09:00:00.000Z"
@@ -109,7 +109,7 @@ describe("public session parsing", () => {
       })
     ).toBe(true);
     expect(
-      isSessionUsable({
+      hasSessionMaterial({
         cookies: {},
         locale: "fr",
         acquiredAt: "2026-09-21T09:00:00.000Z"
@@ -124,7 +124,15 @@ describe("public session parsing", () => {
       hostname: "www.vinted.it",
       market: "IT"
     });
+    expect(parseVintedMarketUrl("https://www.vinted.co.uk/catalog")).toEqual({
+      siteBaseUrl: "https://www.vinted.co.uk",
+      apiBaseUrl: "https://api.vinted.co.uk",
+      hostname: "www.vinted.co.uk",
+      market: "GB"
+    });
     expect(() => parseVintedMarketUrl("https://example.com")).toThrow(InvalidMarketUrlError);
+    expect(() => parseVintedMarketUrl("https://www.vinted.evil-example.com")).toThrow(InvalidMarketUrlError);
+    expect(() => parseVintedMarketUrl("http://www.vinted.fr")).toThrow(InvalidMarketUrlError);
   });
 });
 
@@ -159,7 +167,26 @@ describe("acquirePublicSession", () => {
       acquiredAt: "2026-09-21T09:00:00.000Z"
     });
     expect(result.diagnostics[0]?.request.host).toBe("site");
+    expect(transport.requests[0]?.headers).toEqual({
+      accept: "text/html,application/xhtml+xml"
+    });
     expect(result.diagnostics[0]?.response?.redirected).toBe(true);
+  });
+
+  it("sends Accept-Language only when explicitly configured", async () => {
+    const transport = new StubTransport(publicResponse());
+
+    await acquirePublicSession({
+      marketUrl: "https://www.vinted.fr",
+      transport,
+      acceptLanguage: "nl-NL,nl;q=0.9",
+      now: () => new Date("2026-09-21T09:00:00.000Z")
+    });
+
+    expect(transport.requests[0]?.headers).toEqual({
+      accept: "text/html,application/xhtml+xml",
+      "accept-language": "nl-NL,nl;q=0.9"
+    });
   });
 
   it("throws on network errors", async () => {

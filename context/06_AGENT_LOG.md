@@ -7,3 +7,4 @@
 - Normalized persistent memory by consolidating useful notes from former `contexte/` into `context/04_RESEARCH_SOURCES.md`; `context/` is the only source of truth going forward.
 - Completed `VNT-003`: implemented public anonymous session acquisition, verified `www.vinted.fr` live with sanitized fixture, and marked public session acquisition `IMPLEMENTED`.
 - Completed `VNT-004`: verified `/svc-catalogue/items` on `api.vinted.fr`, implemented `VintedCatalogClient.searchItems`, added sanitized catalog fixture and marked catalog search/text/price filters `IMPLEMENTED`.
+- Completed `VNT-004A`: hardened the verified public client foundation without adding capabilities, including configurable session language, stricter market parsing, redacted error/final URL diagnostics, catalog input validation, transport tests and safer catalog normalization.

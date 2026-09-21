@@ -11,3 +11,5 @@ Last updated: 2026-09-21
 - Which of the public cookies observed on FR are strictly required by current `/svc-catalogue/items` requests?
 - Do non-FR markets use the same `/svc-catalogue/items` query parameter names and pagination shape?
 - Which current endpoints expose resolver data for `brand_id`, `catalog_id`, `size_id`, `status_id`, and `color_id`?
+- Which Vinted market domains should be added to the strict allowlist after current reproduction, and are any listed domains unavailable from the target runtime?
+- When `brand_title` or `size_title` is absent from search responses, should UI display `item_box` values only as presentation text or trigger an item-detail enrichment step?

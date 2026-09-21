@@ -32,11 +32,12 @@ describe("DiagnosticTransport", () => {
         status: 200,
         statusText: "OK",
         headers: {
-          "content-type": "application/json",
-          "set-cookie": "sessionid=live-cookie",
-          "content-length": "88"
-        },
-        data: {
+        "content-type": "application/json",
+        "set-cookie": "sessionid=live-cookie",
+        "content-length": "88"
+      },
+      finalUrl: "https://api.vinted.fr/svc-catalogue/items?token=access-live&session_id=nested-session-token&page=1",
+      data: {
           ok: true,
           nested: {
             refreshToken: "refresh-live",
@@ -94,6 +95,7 @@ describe("DiagnosticTransport", () => {
     expect(entry?.response).toMatchObject({
       status: 200,
       statusText: "OK",
+      finalUrl: "https://api.vinted.fr/svc-catalogue/items?token=[REDACTED]&session_id=[REDACTED]&page=1",
       contentType: "application/json",
       bodySizeBytes: 88,
       headers: {
@@ -211,5 +213,32 @@ describe("DiagnosticTransport", () => {
         message: "HTTP 429"
       }
     });
+  });
+
+  it("sanitizes thrown error messages before emitting diagnostics", async () => {
+    const sink = new MemoryDiagnosticSink();
+    const failingTransport: VintedTransport = {
+      request<T>(): Promise<VintedResponse<T>> {
+        return Promise.reject(new Error("request failed cookie=session-secret token=abc Bearer live-token"));
+      }
+    };
+    const transport = new DiagnosticTransport(failingTransport, sink);
+
+    await expect(
+      transport.request({
+        method: "GET",
+        host: "api",
+        path: "/svc-catalogue/items",
+        requestId: "secret-error"
+      })
+    ).rejects.toThrow("session-secret");
+
+    const serialized = JSON.stringify(sink.entries);
+    expect(serialized).not.toContain("session-secret");
+    expect(serialized).not.toContain("abc");
+    expect(serialized).not.toContain("live-token");
+    expect(sink.entries[0]?.error?.message).toBe(
+      "request failed cookie=[REDACTED] token=[REDACTED] Bearer [REDACTED]"
+    );
   });
 });

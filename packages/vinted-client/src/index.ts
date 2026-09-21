@@ -2,6 +2,7 @@ export type { RedactedValue } from "./diagnostics/redact.js";
 export { VintedCatalogClient } from "./catalog/VintedCatalogClient.js";
 export {
   CatalogSearchHttpError,
+  InvalidCatalogSearchInputError,
   CatalogSearchSessionError,
   InvalidCatalogSearchResponseError
 } from "./catalog/errors.js";
@@ -19,7 +20,14 @@ export type {
   VintedSessionProvider,
   VintedSessionSource
 } from "./catalog/types.js";
-export { redactDiagnosticValue, redactHeaders, redactObject } from "./diagnostics/redact.js";
+export {
+  isSensitiveDiagnosticKey,
+  redactDiagnosticText,
+  redactDiagnosticUrl,
+  redactDiagnosticValue,
+  redactHeaders,
+  redactObject
+} from "./diagnostics/redact.js";
 export { DiagnosticTransport } from "./diagnostics/DiagnosticTransport.js";
 export { ConsoleDiagnosticSink, MemoryDiagnosticSink } from "./diagnostics/sinks.js";
 export type {
@@ -35,8 +43,8 @@ export {
   createSessionFromPublicResponse,
   extractCsrfToken,
   extractHtmlLocale,
+  hasSessionMaterial,
   isSessionEmpty,
-  isSessionUsable,
   parseSetCookieHeaders,
   parseVintedMarketUrl
 } from "./session/publicSession.js";

@@ -60,7 +60,7 @@ Current verified route:
   - `price_to`
   - `page`
   - `per_page`
-- required headers observed:
+- required headers observed in FR spot checks:
   - `Cookie`: requests without cookie returned `403` in VNT-004 spot checks
 - optional headers sent by implementation:
   - `Accept: application/json, text/plain, */*`
@@ -69,7 +69,7 @@ Current verified route:
 - response shape:
   - root object with `items`, `pagination`, `search_tracking_params`
   - pagination fields observed: `current_page`, `per_page`, `total_entries`, `total_pages`
-  - item fields mapped: `id`, `title`, `price.amount`, `price.currency_code`, `url`, `photo.full_size_url`, `item_box.first_line`, `item_box.second_line`, `user.id`
+  - item fields mapped: `id`, `title`, `price.amount` as string, `price.currency_code`, `url`, `photo.full_size_url`, explicit `brand_title`/`size_title` when present, `item_box.first_line`/`item_box.second_line` as display-only metadata, `user.id`
 - response fixture: `fixtures/vinted/catalog/search-polo-lacoste-fr.sanitised.json`
 
 Legacy route seen in older libraries:
@@ -115,7 +115,7 @@ When changing a capability to `VERIFIED`, append verification date, market/domai
   - `X-Anon-Id`: present, value redacted in fixture
   - locale: `fr-FR`
   - CSRF token: not observed in this reproduction
-- Session usability rule: usable when at least one public network identity signal is present, currently cookies or `X-Anon-Id`; locale alone is not considered usable.
+- Session material rule: public acquisition requires at least one public network identity signal, currently cookies, `X-Anon-Id` or CSRF token; locale alone is not considered session material. Adapter-specific requirements are stricter where verified.
 - Response fixture: `fixtures/vinted/session/public-session-fr.sanitised.json`
   - Known failure behavior represented in tests: network error, unexpected status, missing usable session information and invalid market URL.
 
@@ -138,8 +138,8 @@ When changing a capability to `VERIFIED`, append verification date, market/domai
   - `per_page=10`
   - `total_entries=960`
   - `total_pages=96`
-- Required session components observed:
-  - public session cookies are required; request without cookie returned `403`
+- Required session components observed in FR catalog spot checks on 2026-09-21:
+  - public session cookies were required; request without cookie returned `403`
   - `X-Anon-Id` was not required when cookies were present in spot checks
 - Response fixture: `fixtures/vinted/catalog/search-polo-lacoste-fr.sanitised.json`
 - Known failure behavior represented in tests: HTTP non-200, invalid payload, missing cookie-backed session.

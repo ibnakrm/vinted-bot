@@ -9,7 +9,7 @@ export interface SearchItemsInput {
 }
 
 export interface VintedSearchItemPrice {
-  amount: string | number;
+  amount: string;
   currency?: string;
 }
 
@@ -21,6 +21,8 @@ export interface VintedSearchItem {
   imageUrl?: string;
   brand?: string;
   size?: string;
+  displayFirstLine?: string;
+  displaySecondLine?: string;
   userId?: string | number;
 }
 

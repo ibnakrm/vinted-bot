@@ -61,11 +61,29 @@ Acceptance criteria:
 - fixture tests;
 - no third-party wrapper runtime dependency unless ADR explicitly changes.
 
+### VNT-004A - Harden verified public client foundation
+
+Status: DONE  
+Priority: P0  
+Depends on: VNT-004
+
+Acceptance criteria:
+
+- public session acquisition does not hardcode FR `Accept-Language`;
+- generic session material helper is not treated as adapter-level capability readiness;
+- diagnostics sanitize error messages and final URLs;
+- `FetchVintedTransport` has unit tests with injected `fetchImpl`;
+- catalog search input validation rejects negative and non-finite values;
+- catalog item mapping treats `item_box` as display metadata only;
+- `price.amount` is normalized to string;
+- market URL parsing rejects deceptive `www.vinted.*` hostnames;
+- Node 24 runtime validation is documented.
+
 ### VNT-005 - Minimal private web UI: search
 
 Status: TODO  
 Priority: P0  
-Depends on: VNT-004
+Depends on: VNT-004A
 
 Acceptance criteria:
 

@@ -30,7 +30,7 @@ Status: Accepted
 
 The project now targets Node 24 LTS via `.nvmrc` and `package.json` `engines.node`.
 
-Rationale: Vinted Bot should have one stable runtime baseline for strict TypeScript, diagnostics, future transport behavior and CI. The current local shell reports Node 23.6.1, so npm emits an engine warning until the shell is switched to Node 24.
+Rationale: Vinted Bot should have one stable runtime baseline for strict TypeScript, diagnostics, future transport behavior and CI. Local execution is validated with `nvm use` from `.nvmrc`, which selects Node 24.21.0 and npm 11.19.0 in this workspace.
 
 ## ADR-0005 - Instrument transports through diagnostic sinks
 
@@ -46,14 +46,14 @@ Status: Monitoring
 
 `npm audit` reports advisories in the Vitest/Vite/esbuild development-tooling chain, including items with no direct fix available from the current dependency graph. No mass upgrade or forced audit fix was applied during `VNT-002` because that would be unrelated dependency churn. Revisit when upgrading the test stack or when a fixed Vitest/Vite release is available.
 
-## ADR-0006 - Public anonymous session usability
+## ADR-0006 - Public anonymous session material
 
 Date: 2026-09-21  
 Status: Accepted
 
-A public Vinted session is considered empty when it has no cookies, no `X-Anon-Id`, no CSRF token and no locale. It is considered usable when at least one public network identity signal is present: parsed `Set-Cookie` values or `X-Anon-Id`.
+A public Vinted session is considered empty when it has no cookies, no `X-Anon-Id`, no CSRF token and no locale. It is considered to contain public session material when at least one network identity signal is present: parsed `Set-Cookie` values, `X-Anon-Id` or CSRF token.
 
-Locale alone is useful metadata but not considered sufficient for a usable session. CSRF is optional for public session acquisition because the FR homepage reproduction did not expose a CSRF token.
+Locale alone is useful metadata but not considered sufficient session material. This helper does not define adapter-level capability requirements: VNT-004 FR catalog spot checks showed that catalog search currently requires a cookie-backed public session, while `X-Anon-Id` alone was not sufficient in those spot checks. CSRF is optional for public session acquisition because the FR homepage reproduction did not expose a CSRF token.
 
 ## ADR-0007 - Catalog search adapter boundary
 
@@ -63,3 +63,14 @@ Status: Accepted
 Public catalog search is implemented behind `VintedCatalogClient` in `packages/vinted-client`. The adapter receives a `VintedSession` or session provider plus an injected `VintedTransport`, so search logic does not know about `fetch()` and can be wrapped by `DiagnosticTransport`.
 
 The verified VNT-004 contract maps internal input fields to current FR query parameters: `query -> search_text`, `priceFrom -> price_from`, `priceTo -> price_to`, `page -> page`, and `perPage -> per_page`. Additional filters such as brand/category/size/status/color remain future work until verified.
+
+VNT-004A tightened the adapter boundary: `SearchItemsInput` rejects negative/non-finite price and pagination values, `price.amount` is normalized as a string, and `item_box.first_line`/`item_box.second_line` are treated as UI display metadata rather than reliable business fields for brand or size. Business fields should prefer explicit response properties such as `brand_title` and `size_title` when present.
+
+## ADR-0008 - Public session acquisition language and market parsing
+
+Date: 2026-09-21  
+Status: Accepted
+
+Public session acquisition does not send `Accept-Language` by default. Callers may provide an explicit `acceptLanguage`, but the locale observed in the Vinted response remains the source of truth when present.
+
+`parseVintedMarketUrl` uses a documented allowlist of known `www.vinted.*` domains instead of accepting any hostname starting with `www.vinted.`. This rejects deceptive hosts such as `www.vinted.evil-example.com` and maps multi-label domains such as `www.vinted.co.uk` to an explicit market code (`GB`) rather than deriving a naive `CO.UK` value.

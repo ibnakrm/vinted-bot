@@ -23,3 +23,10 @@ export class CatalogSearchSessionError extends Error {
     this.name = "CatalogSearchSessionError";
   }
 }
+
+export class InvalidCatalogSearchInputError extends Error {
+  public constructor(message: string) {
+    super(message);
+    this.name = "InvalidCatalogSearchInputError";
+  }
+}

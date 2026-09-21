@@ -1,5 +1,5 @@
 import { createBodyMetadata } from "./bodyMetadata.js";
-import { redactHeaders, redactObject } from "./redact.js";
+import { redactDiagnosticText, redactDiagnosticUrl, redactHeaders, redactObject } from "./redact.js";
 import type {
   DiagnosticSink,
   DiagnosticTransportOptions,
@@ -36,13 +36,13 @@ function normalizeError(error: unknown): { name: string; message: string } {
   if (error instanceof Error) {
     return {
       name: error.name,
-      message: error.message
+      message: redactDiagnosticText(error.message)
     };
   }
 
   return {
     name: "UnknownError",
-    message: String(error)
+    message: redactDiagnosticText(String(error))
   };
 }
 
@@ -136,7 +136,7 @@ export class DiagnosticTransport implements VintedTransport {
     }
 
     if (response.finalUrl !== undefined) {
-      diagnostic.finalUrl = response.finalUrl;
+      diagnostic.finalUrl = redactDiagnosticUrl(response.finalUrl);
     }
 
     if (response.redirected !== undefined) {
