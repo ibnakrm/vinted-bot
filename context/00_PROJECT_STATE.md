@@ -8,7 +8,7 @@ Phase 0 - Research and foundation.
 
 ## Active Backlog Item
 
-Next: `VNT-005 - Minimal private web UI: search`
+Next: `VNT-101 - Authenticated session research`
 
 ## Progress
 
@@ -22,4 +22,4 @@ Next: `VNT-005 - Minimal private web UI: search`
 
 ## Current Priority
 
-Next: prepare `VNT-005` minimal private web UI search shell. Keep saved searches, polling and worker behavior out of scope until later backlog items.
+Next: execute `VNT-101 - Authenticated session research` before UI work. Public research is already verified, and authenticated session behavior is now the critical product risk because it blocks own inventory, messages, offers and listing management. `VNT-005 - Minimal private web UI: search` is deferred to P1 and depends on VNT-101.

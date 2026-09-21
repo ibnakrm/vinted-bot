@@ -82,8 +82,8 @@ Acceptance criteria:
 ### VNT-005 - Minimal private web UI: search
 
 Status: TODO  
-Priority: P0  
-Depends on: VNT-004A
+Priority: P1  
+Depends on: VNT-004A, VNT-101
 
 Acceptance criteria:
 
@@ -109,7 +109,9 @@ Goal: validate hosting model for periodic search and deduplication before commit
 ### VNT-101 - Authenticated session research
 
 Status: TODO  
-Priority: P1
+Priority: P0
+
+Goal: research authenticated session behavior before UI work because it is the next critical product risk and blocks own inventory, messages, offers and listing management.
 
 ### VNT-102 - Own inventory mapping
 

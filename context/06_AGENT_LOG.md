@@ -8,3 +8,4 @@
 - Completed `VNT-003`: implemented public anonymous session acquisition, verified `www.vinted.fr` live with sanitized fixture, and marked public session acquisition `IMPLEMENTED`.
 - Completed `VNT-004`: verified `/svc-catalogue/items` on `api.vinted.fr`, implemented `VintedCatalogClient.searchItems`, added sanitized catalog fixture and marked catalog search/text/price filters `IMPLEMENTED`.
 - Completed `VNT-004A`: hardened the verified public client foundation without adding capabilities, including configurable session language, stricter market parsing, redacted error/final URL diagnostics, catalog input validation, transport tests and safer catalog normalization.
+- Reprioritized roadmap: `VNT-101 - Authenticated session research` is now the next P0 task because authenticated session behavior is the critical blocker for own inventory, messages, offers and listing management; `VNT-005` moved to P1 and now depends on VNT-101.
