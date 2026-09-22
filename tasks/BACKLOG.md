@@ -159,10 +159,22 @@ Acceptance criteria:
 
 ### VNT-104 - Message read adapter
 
-Status: TODO  
+Status: DONE
 Priority: P1
 
-Goal: research and implement read-only message detail only after scoped sanitized evidence for `GET /messaging/main/conversations/[CONVERSATION_ID]`; do not implement writes.
+Result: implemented read-only conversation detail from verified authorized FR HAR evidence. Route: `GET /messaging/main/conversations/{conversationId}` on `api.vinted.fr`. The adapter maps basic conversation/message metadata and extracts plain text only from `message_type=text` plus `data.body`; diagnostics response previews are disabled for this private payload route.
+
+Acceptance criteria:
+
+- route documented with host class `api`;
+- adapter accepts explicit `conversationId`;
+- conversation ID is encoded as a path segment;
+- no write operation is implemented;
+- conversation mapper exposes metadata, messages and pagination;
+- text is returned to code for valid plain text messages;
+- non-text message data is tolerated without broad business mapping;
+- sanitized fixture exists without real message content, real usernames, real IDs, real attachments or real cursors;
+- tests cover route, path encoding, mapping, plain text, non-text tolerance, optional fields, empty messages, pagination, invalid response, HTTP failure and privacy diagnostics.
 
 ## EPIC 2 - Seller Writes
 

@@ -1,9 +1,9 @@
-import { MessageThreadsHttpError, MessageThreadsSessionError } from "./errors.js";
-import { buildMessageThreadsQuery, mapMessageThreadsResponse } from "./mappers.js";
-import type { ListMessageThreadsInput, ListMessageThreadsResult } from "./types.js";
+import { ConversationHttpError, MessageThreadsHttpError, MessageThreadsSessionError } from "./errors.js";
+import { buildConversationPath, buildMessageThreadsQuery, mapConversationResponse, mapMessageThreadsResponse } from "./mappers.js";
+import type { ListMessageThreadsInput, ListMessageThreadsResult, VintedConversation } from "./types.js";
 import { hasSessionMaterial, type VintedMarket } from "../session/publicSession.js";
 import type { VintedSession, VintedSessionSource } from "../session/VintedSession.js";
-import type { VintedRequest, VintedTransport } from "../transport/types.js";
+import type { VintedRequest, VintedResponse, VintedTransport } from "../transport/types.js";
 
 export interface VintedMessagingClientOptions {
   market: VintedMarket;
@@ -34,6 +34,27 @@ export class VintedMessagingClient {
   public constructor(private readonly options: VintedMessagingClientOptions) {}
 
   public async listMessageThreads(input: ListMessageThreadsInput = {}): Promise<ListMessageThreadsResult> {
+    const response = await this.requestMessagingEndpoint("/messaging/main/inbox", buildMessageThreadsQuery(input));
+    if (response.status !== 200) {
+      throw new MessageThreadsHttpError(response.status, response.statusText);
+    }
+
+    return mapMessageThreadsResponse(response.data);
+  }
+
+  public async getConversation(conversationId: string | number): Promise<VintedConversation> {
+    const response = await this.requestMessagingEndpoint(buildConversationPath(conversationId));
+    if (response.status !== 200) {
+      throw new ConversationHttpError(response.status, response.statusText);
+    }
+
+    return mapConversationResponse(response.data);
+  }
+
+  private async requestMessagingEndpoint(
+    path: string,
+    query: VintedRequest["query"] = {}
+  ): Promise<VintedResponse<unknown>> {
     const session = await resolveSession(this.options.session);
     if (!hasSessionMaterial(session)) {
       throw new MessageThreadsSessionError();
@@ -61,8 +82,8 @@ export class VintedMessagingClient {
       method: "GET",
       host: "api",
       hostname: new URL(this.options.market.apiBaseUrl).hostname,
-      path: "/messaging/main/inbox",
-      query: buildMessageThreadsQuery(input),
+      path,
+      query,
       headers,
       diagnostics: {
         includeResponseBodyPreview: false
@@ -73,11 +94,6 @@ export class VintedMessagingClient {
       request.timeoutMs = this.options.timeoutMs;
     }
 
-    const response = await this.options.transport.request<unknown>(request);
-    if (response.status !== 200) {
-      throw new MessageThreadsHttpError(response.status, response.statusText);
-    }
-
-    return mapMessageThreadsResponse(response.data);
+    return this.options.transport.request<unknown>(request);
   }
 }

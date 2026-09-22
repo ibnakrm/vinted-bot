@@ -30,3 +30,29 @@ export class InvalidMessageThreadsResponseError extends Error {
     this.name = "InvalidMessageThreadsResponseError";
   }
 }
+
+export class ConversationHttpError extends Error {
+  public readonly status: number;
+  public readonly statusText: string | undefined;
+
+  public constructor(status: number, statusText?: string) {
+    super(`Vinted conversation request failed with HTTP ${status}${statusText === undefined ? "" : ` ${statusText}`}`);
+    this.name = "ConversationHttpError";
+    this.status = status;
+    this.statusText = statusText;
+  }
+}
+
+export class InvalidConversationInputError extends Error {
+  public constructor(message: string) {
+    super(message);
+    this.name = "InvalidConversationInputError";
+  }
+}
+
+export class InvalidConversationResponseError extends Error {
+  public constructor(message = "Invalid Vinted conversation response") {
+    super(message);
+    this.name = "InvalidConversationResponseError";
+  }
+}

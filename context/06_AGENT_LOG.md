@@ -17,3 +17,4 @@
 ## 2026-09-22
 
 - Completed `VNT-103`: documented verified `GET /messaging/main/inbox` on `api.vinted.fr`, implemented privacy-first `VintedMessagingClient.listMessageThreads`, disabled messaging response previews in diagnostics, added sanitized fixtures/tests, and marked `Read message threads` as `IMPLEMENTED`.
+- Completed `VNT-104`: documented verified `GET /messaging/main/conversations/[CONVERSATION_ID]` on `api.vinted.fr`, implemented read-only `VintedMessagingClient.getConversation`, mapped plain text from `message_type=text` plus `data.body`, forced diagnostics previews off for conversation detail, added sanitized fixtures/tests, and marked `Read messages` as `IMPLEMENTED`.

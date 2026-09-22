@@ -8,7 +8,7 @@ Phase 0 - Research and foundation.
 
 ## Active Backlog Item
 
-Next: `VNT-104 - Message read adapter`
+Next: `VNT-301 - Send message mapping`
 
 ## Progress
 
@@ -22,7 +22,8 @@ Next: `VNT-104 - Message read adapter`
 - `VNT-101 - Authenticated session research` is complete for authenticated-session recognition from an authorized FR browser HAR. Sanitized evidence is stored in `fixtures/vinted/session/authenticated-session-fr.sanitised.json`; no raw HAR is committed. A strong current-user identity endpoint remains unverified because no `/me/current/account` route was present in the HAR.
 - `VNT-102 - Own inventory mapping` is complete from a verified authorized FR HAR route: `GET /api/v2/wardrobe/[REDACTED_USER_ID]/items`. `VintedInventoryClient` implements read-only own inventory with sanitized fixture and tests.
 - `VNT-103 - Current message-thread mapping` is complete from a verified authorized FR HAR route: `GET /messaging/main/inbox` on `api.vinted.fr`, with cursor pagination via `next_cursor`. `VintedMessagingClient` implements read-only thread listing with privacy-first mapping, diagnostics body preview disabled for messaging responses, sanitized fixture and tests.
+- `VNT-104 - Message read adapter` is complete from a verified authorized FR HAR route: `GET /messaging/main/conversations/[CONVERSATION_ID]` on `api.vinted.fr`. `VintedMessagingClient.getConversation` implements read-only conversation detail with plain text extraction for `message_type=text` plus `data.body`, diagnostics body preview disabled, sanitized fixture and tests.
 
 ## Current Priority
 
-Next: `VNT-104 - Message read adapter`, using the observed candidate route `GET /messaging/main/conversations/[CONVERSATION_ID]` only after a separate scoped implementation pass with sanitized evidence and tests. Do not implement messaging writes.
+Next: `VNT-301 - Send message mapping`, only as a research task with fresh authorized evidence. Do not implement messaging writes until the write endpoint, payload, auth/session behavior and safety constraints are verified.

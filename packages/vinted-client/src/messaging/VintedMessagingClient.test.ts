@@ -2,17 +2,28 @@ import { describe, expect, it } from "vitest";
 
 import { VintedMessagingClient } from "./VintedMessagingClient.js";
 import {
+  ConversationHttpError,
+  InvalidConversationInputError,
+  InvalidConversationResponseError,
   InvalidMessageThreadsInputError,
   InvalidMessageThreadsResponseError,
   MessageThreadsHttpError,
   MessageThreadsSessionError
 } from "./errors.js";
-import { buildMessageThreadsQuery, mapMessageThread, mapMessageThreadsResponse } from "./mappers.js";
+import {
+  buildConversationPath,
+  buildMessageThreadsQuery,
+  mapConversationMessage,
+  mapConversationResponse,
+  mapMessageThread,
+  mapMessageThreadsResponse
+} from "./mappers.js";
 import type { VintedMarket } from "../session/publicSession.js";
 import type { VintedSession } from "../session/VintedSession.js";
 import { DiagnosticTransport } from "../diagnostics/DiagnosticTransport.js";
 import { MemoryDiagnosticSink } from "../diagnostics/sinks.js";
 import type { VintedRequest, VintedResponse, VintedTransport } from "../transport/types.js";
+import conversationFixture from "./__fixtures__/conversation-detail-response.sanitised.json" with { type: "json" };
 import messageThreadsFixture from "./__fixtures__/message-threads-response.sanitised.json" with { type: "json" };
 
 const market: VintedMarket = {
@@ -60,6 +71,19 @@ describe("buildMessageThreadsQuery", () => {
 
   it("rejects empty cursors", () => {
     expect(() => buildMessageThreadsQuery({ nextCursor: "" })).toThrow(InvalidMessageThreadsInputError);
+  });
+});
+
+describe("buildConversationPath", () => {
+  it("encodes conversation IDs in the observed detail path", () => {
+    expect(buildConversationPath("conversation id/with slash")).toBe(
+      "/messaging/main/conversations/conversation%20id%2Fwith%20slash"
+    );
+  });
+
+  it("rejects invalid conversation IDs", () => {
+    expect(() => buildConversationPath("")).toThrow(InvalidConversationInputError);
+    expect(() => buildConversationPath(Number.NaN)).toThrow(InvalidConversationInputError);
   });
 });
 
@@ -121,6 +145,86 @@ describe("message thread response mapping", () => {
     expect(() => mapMessageThreadsResponse("not-json")).toThrow(InvalidMessageThreadsResponseError);
     expect(() => mapMessageThreadsResponse({})).toThrow(InvalidMessageThreadsResponseError);
     expect(() => mapMessageThread({ created_at: "missing id" })).toThrow(InvalidMessageThreadsResponseError);
+  });
+});
+
+describe("conversation detail response mapping", () => {
+  it("maps conversation metadata, messages, plain text and pagination", () => {
+    expect(mapConversationResponse(conversationFixture.full)).toEqual({
+      id: "conversation_1001",
+      allowReply: true,
+      conversationType: "item",
+      createdAt: "2026-09-22T10:20:30+02:00",
+      isUnreadByCurrentUser: false,
+      messages: [
+        {
+          id: "message_5001",
+          conversationId: "conversation_1001",
+          senderId: "user_2001",
+          messageType: "text",
+          createdAt: "2026-09-22T10:21:00+02:00",
+          text: "SANITISED_MESSAGE"
+        },
+        {
+          id: "message_5002",
+          conversationId: "conversation_1001",
+          messageType: "system",
+          createdAt: "2026-09-22T10:22:00+02:00"
+        },
+        {
+          id: "message_5003",
+          conversationId: "conversation_1001",
+          senderId: "user_2002",
+          messageType: "offer",
+          createdAt: "2026-09-22T10:23:00+02:00"
+        },
+        {
+          id: "message_5004",
+          conversationId: "conversation_1001",
+          senderId: "user_2001",
+          messageType: "attachment",
+          createdAt: "2026-09-22T10:24:00+02:00"
+        }
+      ],
+      pagination: {
+        hasNext: false,
+        hasPrev: true,
+        prevCursor: "[REDACTED_CURSOR]"
+      }
+    });
+  });
+
+  it("supports empty messages and optional fields", () => {
+    expect(mapConversationResponse(conversationFixture.empty)).toEqual({
+      id: "conversation_1002",
+      allowReply: false,
+      messages: [],
+      pagination: {
+        hasNext: false,
+        hasPrev: false
+      }
+    });
+  });
+
+  it("tolerates non-text message data without mapping it as text", () => {
+    expect(
+      mapConversationMessage({
+        id: 123,
+        message_type: "system",
+        data: {
+          body: "do not expose as text"
+        }
+      })
+    ).toEqual({
+      id: 123,
+      messageType: "system"
+    });
+  });
+
+  it("rejects invalid conversation payloads", () => {
+    expect(() => mapConversationResponse("not-json")).toThrow(InvalidConversationResponseError);
+    expect(() => mapConversationResponse({ id: "conversation_1001" })).toThrow(InvalidConversationResponseError);
+    expect(() => mapConversationMessage({ message_type: "text" })).toThrow(InvalidConversationResponseError);
   });
 });
 
@@ -226,6 +330,102 @@ describe("VintedMessagingClient", () => {
     });
 
     await expect(client.listMessageThreads()).rejects.toThrow(MessageThreadsHttpError);
+  });
+
+  it("sends conversation detail requests to api host with an encoded conversation ID", async () => {
+    const transport = new StubTransport({
+      status: 200,
+      statusText: "OK",
+      headers: {
+        "content-type": "application/json"
+      },
+      data: conversationFixture.full
+    });
+    const client = new VintedMessagingClient({ market, session, transport });
+
+    const result = await client.getConversation("conversation id/with slash");
+
+    expect(result.messages).toHaveLength(4);
+    expect(transport.requests[0]).toMatchObject({
+      method: "GET",
+      host: "api",
+      hostname: "api.vinted.fr",
+      path: "/messaging/main/conversations/conversation%20id%2Fwith%20slash",
+      query: {},
+      headers: {
+        accept: "application/json, text/plain, */*",
+        cookie: "v_udt=cookie-live; access_token_web=access-live",
+        "accept-language": "fr-FR",
+        locale: "fr-FR",
+        "x-anon-id": "anon-live",
+        "x-csrf-token": "csrf-live"
+      },
+      diagnostics: {
+        includeResponseBodyPreview: false
+      }
+    });
+  });
+
+  it("throws conversation-specific errors on HTTP non-200", async () => {
+    const client = new VintedMessagingClient({
+      market,
+      session,
+      transport: new StubTransport({
+        status: 404,
+        statusText: "Not Found",
+        headers: {},
+        data: { error: "not_found" }
+      })
+    });
+
+    await expect(client.getConversation("conversation_1001")).rejects.toThrow(ConversationHttpError);
+  });
+
+  it("returns private text to code but never includes it in serialized diagnostics", async () => {
+    const sink = new MemoryDiagnosticSink();
+    const privateMessageBody = "PRIVATE_MESSAGE_SECRET";
+    const innerTransport = new StubTransport({
+      status: 200,
+      headers: {
+        "content-type": "application/json"
+      },
+      data: {
+        id: "conversation_1001",
+        messages: [
+          {
+            id: "message_5001",
+            conversation_id: "conversation_1001",
+            sender_id: "user_2001",
+            message_type: "text",
+            created_at: "2026-09-22T10:21:00+02:00",
+            data: {
+              body: privateMessageBody
+            }
+          }
+        ],
+        pagination: {
+          has_next: false,
+          has_prev: false
+        }
+      }
+    });
+    const client = new VintedMessagingClient({
+      market,
+      session,
+      transport: new DiagnosticTransport(innerTransport, sink, { includeJsonPreview: true })
+    });
+
+    const result = await client.getConversation("conversation_1001");
+
+    expect(result.messages[0]?.text).toBe(privateMessageBody);
+    const serialized = JSON.stringify(sink.entries);
+    expect(serialized).not.toContain(privateMessageBody);
+    expect(serialized).not.toContain("cookie-live");
+    expect(serialized).not.toContain("access-live");
+    expect(serialized).not.toContain("anon-live");
+    expect(serialized).not.toContain("csrf-live");
+    expect(sink.entries[0]?.response?.body.preview).toBeUndefined();
+    expect(serialized).toContain("[REDACTED]");
   });
 
   it("redacts secrets and prevents private response payload preview in serialized diagnostics", async () => {

@@ -24,7 +24,7 @@ Statuses:
 | Seller inventory | FOUND | Multiple scraper products expose it historically/currently; current route unverified here. | P1 |
 | Read own inventory | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-21. Route: `GET https://www.vinted.fr/api/v2/wardrobe/[REDACTED_USER_ID]/items?page=1&per_page=20&order=relevance` and page 2 returned 200 JSON with `items`, `pagination`, `code`; implemented in `VintedInventoryClient` with tests and sanitized fixture `fixtures/vinted/inventory/own-inventory-fr.sanitised.json`. | P1 |
 | Read message threads | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-22. Route: `GET https://api.vinted.fr/messaging/main/inbox`, with `next_cursor` pagination observed; implemented in `VintedMessagingClient` with privacy-first mapper, diagnostics response preview disabled and sanitized fixture `fixtures/vinted/messaging/message-threads-fr.sanitised.json`. | P1 |
-| Read messages | FOUND | Historical scraper parsed `msg_thread.messages`; current authorized HAR also observed candidate detail route `GET /messaging/main/conversations/[CONVERSATION_ID] -> 200`, but VNT-103 did not implement it. | P1 |
+| Read messages | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-22. Route: `GET https://api.vinted.fr/messaging/main/conversations/[CONVERSATION_ID]`; implemented in `VintedMessagingClient.getConversation` with metadata mapping, plain text extraction from `message_type=text` plus `data.body`, diagnostics response preview disabled and sanitized fixture `fixtures/vinted/messaging/conversation-detail-fr.sanitised.json`. | P1 |
 | Send message | UNKNOWN | Needs current authenticated write mapping. | P1 |
 | Create listing | UNKNOWN | Research target. | P1 |
 | Upload listing photos | UNKNOWN | Research target. | P1 |
@@ -129,9 +129,47 @@ Implementation:
 - privacy: mapper stores metadata only, never message content; request diagnostics set `includeResponseBodyPreview: false`
 - cursor handling: `next_cursor` is opaque and must not be decoded or interpreted
 
-Candidate for VNT-104 only, not implemented in VNT-103:
+Implemented by VNT-104:
 
-- `GET /messaging/main/conversations/[CONVERSATION_ID]` -> `200`
+- adapter: `packages/vinted-client/src/messaging/VintedMessagingClient.ts`
+- method: `getConversation(conversationId)`
+- route: `GET /messaging/main/conversations/[CONVERSATION_ID]` -> `200`
+- privacy: message text is returned to code for valid text messages, but diagnostics response previews are disabled for this route
+
+### Message Reads
+
+Status: `IMPLEMENTED`
+
+Current verified route from authorized messaging HAR evidence:
+
+- verification date: 2026-09-22
+- market/domain: FR, `https://api.vinted.fr`
+- host class: `api`
+- method: `GET`
+- sanitized route: `/messaging/main/conversations/[CONVERSATION_ID]`
+- observed response: `200 OK`, `application/json`
+- query: none observed
+- root fields observed: `allow_reply`, `conversation_type`, `created_at`, `data`, `id`, `is_deletable`, `is_peeking`, `is_seen`, `is_unread_by_current_user`, `localization`, `messages`, `opposite_users`, `pagination`, `peeking_as_side`
+- message fields observed: `conversation_id`, `created_at`, `data`, `id`, `message_type`, `sender_id`
+- pagination fields represented in fixture: `has_next`, `has_prev`, `next_cursor`, `prev_cursor`
+- observed request header names: `accept`, `accept-language`, `locale`, `origin`, `platform`, `referer`, `user-agent`, `x-anon-id`, `x-csrf-token`, `x-next-app`
+- cookies: not observable in HAR; do not conclude they are absent or unnecessary
+- `Authorization`: not observed
+- response fixture: `fixtures/vinted/messaging/conversation-detail-fr.sanitised.json`
+
+Implementation:
+
+- adapter: `packages/vinted-client/src/messaging/VintedMessagingClient.ts`
+- mapper/types/errors/tests under `packages/vinted-client/src/messaging/`
+- method: `getConversation(conversationId: string | number)`
+- path encoding: conversation ID is encoded as a path segment
+- text extraction: only maps `text` when `message_type === "text"` and `data.body` is a string
+- non-text messages: system, offer and attachment-like messages are tolerated but not mapped to business fields in VNT-104
+- diagnostics: request sets `includeResponseBodyPreview: false`, so private message content is not emitted even when global JSON preview is enabled
+
+Important limitation:
+
+- The raw HAR was not available in local paths during this implementation pass. The code and fixture stay conservative and do not infer additional message `data` schemas beyond the supplied route/field evidence and sanitized text fixture.
 
 ### Authenticated Session Recognition
 

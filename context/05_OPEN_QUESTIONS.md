@@ -23,4 +23,7 @@ Last updated: 2026-09-22
 - Which authenticated session signals are actually required to reproduce `/messaging/main/inbox` outside the browser? VNT-103 observed header names only and did not perform comparative header/cookie removal.
 - Does `/messaging/main/inbox` expose the same response shape and cursor pagination across non-FR markets?
 - Which fields from messaging `data`, `labels`, `nudges` and `opposite_users` can be safely mapped later without exposing private content or unnecessary personal data?
-- For VNT-104, what exact sanitized shape does `GET /messaging/main/conversations/[CONVERSATION_ID]` return, and which fields can be mapped without storing private message body content?
+- Which exact message `data` shapes appear for every Vinted `message_type` in raw conversation-detail captures, especially system, offer and attachment messages?
+- Does plain text always use `data.body`, or are there locale/market/client variants?
+- Does `/messaging/main/conversations/{conversationId}` support pagination query parameters for older/newer messages, and if so what names are used?
+- Which authenticated session signals are actually required to reproduce `/messaging/main/conversations/{conversationId}` outside the browser? Header names were observed, but no comparative removal test was performed.

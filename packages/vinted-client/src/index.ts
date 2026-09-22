@@ -42,20 +42,29 @@ export type {
 } from "./inventory/types.js";
 export { VintedMessagingClient } from "./messaging/VintedMessagingClient.js";
 export {
+  ConversationHttpError,
+  InvalidConversationInputError,
+  InvalidConversationResponseError,
   InvalidMessageThreadsInputError,
   InvalidMessageThreadsResponseError,
   MessageThreadsHttpError,
   MessageThreadsSessionError
 } from "./messaging/errors.js";
 export {
+  buildConversationPath,
   buildMessageThreadsQuery,
+  mapConversationMessage,
+  mapConversationResponse,
   mapMessageThread,
   mapMessageThreadsResponse
 } from "./messaging/mappers.js";
 export type {
   ListMessageThreadsInput,
   ListMessageThreadsResult,
+  MessagePagination,
   MessageThreadPagination,
+  VintedConversation,
+  VintedMessage,
   VintedMessageThread,
   VintedMessageThreadLastMessage,
   VintedMessageThreadOppositeUser
