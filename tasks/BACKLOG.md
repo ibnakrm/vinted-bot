@@ -143,8 +143,10 @@ Acceptance criteria:
 
 ### VNT-103 - Current message-thread mapping
 
-Status: TODO  
+Status: BLOCKED  
 Priority: P1
+
+Blocker: local authorized HAR inspection found only unread-count endpoints (`/messaging/main/users/unread_count` and `/inbox-notifications/v1/notifications/unread_count`), not a thread-list route. Capture a new authorized read-only HAR while opening and scrolling the messaging/inbox conversation list.
 
 ### VNT-104 - Message read adapter
 

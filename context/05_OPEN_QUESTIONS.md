@@ -20,3 +20,7 @@ Last updated: 2026-09-21
 - Which own-inventory headers are truly required versus merely observed? VNT-102 observed `x-anon-id`, `x-csrf-token`, `accept`, `accept-language`, `locale`, `referer`, and `user-agent`, but did not perform comparative header removal.
 - Are cookies required for `/api/v2/wardrobe/{userId}/items`? The authorized HAR did not expose request cookies, so cookie requirements remain unknown.
 - Are any `order` values besides `relevance` supported for own inventory? VNT-102 only observed `order=relevance`.
+- Which current route lists messaging threads/conversations? VNT-103 HAR inspection only found unread-count endpoints, not a thread list.
+- What pagination mechanism does the messaging thread-list endpoint use: page/per_page, cursor, next_page_token, offset or another pattern?
+- Which messaging fields can be safely represented as metadata without storing private message body content?
+- Should `DiagnosticTransport` gain per-request sensitivity controls before implementing messaging, so JSON previews cannot accidentally include private message bodies?

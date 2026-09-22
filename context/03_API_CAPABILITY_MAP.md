@@ -23,7 +23,7 @@ Statuses:
 | User profile | FOUND | Multiple historical wrappers/scrapers support it; current behavior unverified. | P1 |
 | Seller inventory | FOUND | Multiple scraper products expose it historically/currently; current route unverified here. | P1 |
 | Read own inventory | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-21. Route: `GET https://www.vinted.fr/api/v2/wardrobe/[REDACTED_USER_ID]/items?page=1&per_page=20&order=relevance` and page 2 returned 200 JSON with `items`, `pagination`, `code`; implemented in `VintedInventoryClient` with tests and sanitized fixture `fixtures/vinted/inventory/own-inventory-fr.sanitised.json`. | P1 |
-| Read message threads | FOUND | Historical code used `/api/v2/users/{user_id}/msg_threads`; not reproduced. | P1 |
+| Read message threads | FOUND | Historical code used `/api/v2/users/{user_id}/msg_threads`; VNT-103 inspected local authorized HARs on 2026-09-22 and found only unread-count endpoints, not a current thread-list route. Needs targeted messaging/inbox HAR capture. | P1 |
 | Read messages | FOUND | Historical scraper parsed `msg_thread.messages`; not reproduced. | P1 |
 | Send message | UNKNOWN | Needs current authenticated write mapping. | P1 |
 | Create listing | UNKNOWN | Research target. | P1 |
@@ -95,6 +95,13 @@ Historical route:
 - `/api/v2/users/{user_id}/msg_threads`
 
 Status remains `FOUND` until reproduced against a current authorized account session.
+
+VNT-103 HAR inspection on 2026-09-22 found only account-specific counters:
+
+- `GET https://api.vinted.fr/messaging/main/users/unread_count` -> `200`, root key `unread_count`
+- `GET https://api.vinted.fr/inbox-notifications/v1/notifications/unread_count` -> `200`, root key `count`
+
+These routes do not return thread collections, participants, last-message metadata or pagination. They must not be treated as message-thread listing endpoints. A targeted DevTools capture from the messaging/inbox page is required; see `context/09_MESSAGE_THREADS_RESEARCH.md`.
 
 ### Authenticated Session Recognition
 
