@@ -6,3 +6,9 @@ export interface VintedSession {
   acquiredAt: string;
   expiresAt?: string;
 }
+
+export interface VintedSessionProvider {
+  getSession(): Promise<VintedSession>;
+}
+
+export type VintedSessionSource = VintedSession | VintedSessionProvider | (() => Promise<VintedSession> | VintedSession);

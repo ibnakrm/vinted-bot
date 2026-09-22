@@ -16,11 +16,13 @@ Statuses:
 | Catalog search | IMPLEMENTED | Verified live on 2026-09-21 against `https://api.vinted.fr/svc-catalogue/items` using public FR session cookies; implemented in `VintedCatalogClient` with sanitized fixture `fixtures/vinted/catalog/search-polo-lacoste-fr.sanitised.json` and tests. | P0 |
 | Text filter | IMPLEMENTED | Verified live as `search_text=polo Lacoste` on `/svc-catalogue/items`; `query` and `q` did not behave as text search during spot checks. | P0 |
 | Price filters | IMPLEMENTED | Verified live as `price_from=10` and `price_to=15` on `/svc-catalogue/items`; implemented as `priceFrom` and `priceTo`. | P0 |
+| Authenticated session recognition | VERIFIED | Verified from authorized browser HAR on 2026-09-21. Best read-only proof request present: `GET https://www.vinted.fr/api/v2/users/[REDACTED_USER_ID]/items/favourites` returned 200 with `code`, `items`, `pagination`; supporting account-specific unread-count endpoints also returned 200. Cookie values were not observable/stored; `x-anon-id` and `x-csrf-token` header names were observed. Sanitized fixture: `fixtures/vinted/session/authenticated-session-fr.sanitised.json`. | P0 |
+| Current user / account proof endpoint | FOUND | No `/me`, `/current_user`, `/api/v2/users/current`, `/api/v2/users/me`, `/profile` or `/account` endpoint was present in the authorized HAR. A weaker account-specific proof endpoint was found via favourites path, but it does not provide strong current-user identity proof. | P0 |
 | Brand/category/size/status filters | FOUND | Supported by current scraper research hints; not reproduced. | P0 |
 | Item public metadata | FOUND | Search data plus HTML/OpenGraph fallback reported by external research; not reproduced. | P0 |
 | User profile | FOUND | Multiple historical wrappers/scrapers support it; current behavior unverified. | P1 |
 | Seller inventory | FOUND | Multiple scraper products expose it historically/currently; current route unverified here. | P1 |
-| Read own inventory | UNKNOWN | Needs current authenticated mapping. | P1 |
+| Read own inventory | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-21. Route: `GET https://www.vinted.fr/api/v2/wardrobe/[REDACTED_USER_ID]/items?page=1&per_page=20&order=relevance` and page 2 returned 200 JSON with `items`, `pagination`, `code`; implemented in `VintedInventoryClient` with tests and sanitized fixture `fixtures/vinted/inventory/own-inventory-fr.sanitised.json`. | P1 |
 | Read message threads | FOUND | Historical code used `/api/v2/users/{user_id}/msg_threads`; not reproduced. | P1 |
 | Read messages | FOUND | Historical scraper parsed `msg_thread.messages`; not reproduced. | P1 |
 | Send message | UNKNOWN | Needs current authenticated write mapping. | P1 |
@@ -93,6 +95,56 @@ Historical route:
 - `/api/v2/users/{user_id}/msg_threads`
 
 Status remains `FOUND` until reproduced against a current authorized account session.
+
+### Authenticated Session Recognition
+
+Status: `VERIFIED` for authenticated-session evidence; `FOUND` for current-user/account identity endpoint.
+
+Authorized HAR analysis on 2026-09-21 found three useful read-only account-specific requests:
+
+- `GET https://www.vinted.fr/api/v2/users/[REDACTED_USER_ID]/items/favourites` -> `200`, decoded JSON root keys `code`, `items`, `pagination`
+- `GET https://api.vinted.fr/messaging/main/users/unread_count` -> `200`, JSON root key `unread_count`
+- `GET https://api.vinted.fr/inbox-notifications/v1/notifications/unread_count` -> `200`, JSON root key `count`
+
+Chosen proof endpoint: `/api/v2/users/[REDACTED_USER_ID]/items/favourites`, because it is read-only, account-scoped, returned 200 and has a richer response shape than unread-count endpoints.
+
+Important constraints:
+
+- This verifies authenticated-session context, not strong current-user identity proof.
+- Do not infer authentication from cookie names alone. The public FR session fixture already recorded cookie names including `access_token_web` and `refresh_token_web`.
+- The HAR did not expose the request `Cookie` header, individual cookie names, `Set-Cookie` names or `Authorization`.
+- Header names observed on account-specific requests include `x-anon-id` and `x-csrf-token`; values are not stored.
+- Sanitized fixture: `fixtures/vinted/session/authenticated-session-fr.sanitised.json`.
+
+### Own Inventory
+
+Status: `IMPLEMENTED`
+
+VNT-102 verified own-inventory route from an authorized authenticated FR browser HAR:
+
+- market/domain: FR, `https://www.vinted.fr`
+- host class: `site`
+- method: `GET`
+- sanitized route: `/api/v2/wardrobe/[REDACTED_USER_ID]/items`
+- query parameters observed:
+  - `page=1`
+  - `page=2`
+  - `per_page=20`
+  - `order=relevance`
+- observed response: `200 OK`, `application/json`
+- response root keys: `items`, `pagination`, `code`
+- pagination fields observed: `current_page`, `total_pages`, `total_entries`, `per_page`, `time`
+- page counts observed: page 1 contained 20 items; page 2 contained 3 items
+- observed request header names include `x-anon-id`, `x-csrf-token`, `accept`, `accept-language`, `locale`, `referer`, `user-agent`
+- cookies were not observable in the HAR; do not conclude they are absent or unnecessary
+- `Authorization` was not observed
+
+Implementation:
+
+- adapter: `packages/vinted-client/src/inventory/VintedInventoryClient.ts`
+- mapper/types/errors/tests under `packages/vinted-client/src/inventory/`
+- sanitized fixture: `fixtures/vinted/inventory/own-inventory-fr.sanitised.json`
+- test fixture: `packages/vinted-client/src/inventory/__fixtures__/own-inventory-response.sanitised.json`
 
 ## Evidence Rule
 

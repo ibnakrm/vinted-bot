@@ -1,0 +1,84 @@
+{
+  "page1": {
+    "code": 0,
+    "items": [
+      {
+        "id": 111111111,
+        "title": "sanitised listed item",
+        "user_id": 999999999,
+        "is_draft": false,
+        "is_closed": false,
+        "is_reserved": false,
+        "is_hidden": false,
+        "price": {
+          "amount": "12.00",
+          "currency_code": "EUR"
+        },
+        "currency": "EUR",
+        "can_push_up": true,
+        "can_edit": true,
+        "favourite_count": 4,
+        "status": "En ligne",
+        "view_count": 42,
+        "path": "/items/111111111-sanitised-listed-item",
+        "photos": [
+          {
+            "full_size_url": "https://images.example.invalid/own-inventory.webp",
+            "url": "https://images.example.invalid/own-inventory-small.webp"
+          }
+        ],
+        "brand": "Sanitised Brand",
+        "size": "M",
+        "item_box": {
+          "first_line": "Display line",
+          "second_line": "Display second line"
+        },
+        "user": {
+          "id": 999999999,
+          "login": "[REDACTED]"
+        }
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 2,
+      "total_entries": 23,
+      "per_page": 20,
+      "time": 123
+    }
+  },
+  "page2": {
+    "code": 0,
+    "items": [
+      {
+        "id": 222222222,
+        "title": "second page item",
+        "user_id": 999999999,
+        "price": {
+          "amount": "8.50",
+          "currency_code": "EUR"
+        },
+        "status": "En ligne",
+        "photos": []
+      }
+    ],
+    "pagination": {
+      "current_page": 2,
+      "total_pages": 2,
+      "total_entries": 23,
+      "per_page": 20,
+      "time": 456
+    }
+  },
+  "empty": {
+    "code": 0,
+    "items": [],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 0,
+      "total_entries": 0,
+      "per_page": 20,
+      "time": 789
+    }
+  }
+}

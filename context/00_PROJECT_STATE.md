@@ -8,7 +8,7 @@ Phase 0 - Research and foundation.
 
 ## Active Backlog Item
 
-Next: `VNT-101 - Authenticated session research`
+Next: `VNT-102 - Own inventory mapping`
 
 ## Progress
 
@@ -19,7 +19,9 @@ Next: `VNT-101 - Authenticated session research`
 - `VNT-003 - Research/implement public session acquisition` is complete for FR public anonymous session acquisition.
 - `VNT-004 - Implement current catalog search adapter` is complete for FR public search with text, price and pagination.
 - `VNT-004A - Harden verified public client foundation` is complete: diagnostics sanitize error messages/final URLs, public session acquisition no longer hardcodes FR language, catalog inputs are validated, `item_box` is display-only metadata, and `nvm use` validates Node 24.21.0/npm 11.19.0 locally.
+- `VNT-101 - Authenticated session research` is complete for authenticated-session recognition from an authorized FR browser HAR. Sanitized evidence is stored in `fixtures/vinted/session/authenticated-session-fr.sanitised.json`; no raw HAR is committed. A strong current-user identity endpoint remains unverified because no `/me/current/account` route was present in the HAR.
+- `VNT-102 - Own inventory mapping` is complete from a verified authorized FR HAR route: `GET /api/v2/wardrobe/[REDACTED_USER_ID]/items`. `VintedInventoryClient` implements read-only own inventory with sanitized fixture and tests.
 
 ## Current Priority
 
-Next: execute `VNT-101 - Authenticated session research` before UI work. Public research is already verified, and authenticated session behavior is now the critical product risk because it blocks own inventory, messages, offers and listing management. `VNT-005 - Minimal private web UI: search` is deferred to P1 and depends on VNT-101.
+Next: choose the next authenticated read research item, likely `VNT-103 - Current message-thread mapping`, while keeping writes, offers, listing mutations, purchase and UI out of scope until explicitly selected.

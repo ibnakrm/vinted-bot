@@ -1,4 +1,4 @@
-import type { VintedSession } from "../session/VintedSession.js";
+export type { VintedSessionProvider, VintedSessionSource } from "../session/VintedSession.js";
 
 export interface SearchItemsInput {
   query?: string;
@@ -37,9 +37,3 @@ export interface SearchItemsResult {
   items: readonly VintedSearchItem[];
   pagination?: SearchItemsPagination;
 }
-
-export interface VintedSessionProvider {
-  getSession(): Promise<VintedSession>;
-}
-
-export type VintedSessionSource = VintedSession | VintedSessionProvider | (() => Promise<VintedSession> | VintedSession);

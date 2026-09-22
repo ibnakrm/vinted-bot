@@ -108,15 +108,38 @@ Goal: validate hosting model for periodic search and deduplication before commit
 
 ### VNT-101 - Authenticated session research
 
-Status: TODO  
+Status: DONE  
 Priority: P0
 
 Goal: research authenticated session behavior before UI work because it is the next critical product risk and blocks own inventory, messages, offers and listing management.
 
+Result: authenticated-session context was verified from an authorized browser HAR using a sanitized, read-only account-specific proof request. Strong current-user identity endpoint remains a follow-up research question because no `/me/current/account` route was present in the HAR.
+
+Acceptance criteria:
+
+- identify how to recognize authenticated state from reproduced account-specific evidence, not cookie names alone;
+- document observed cookie/header/session signal names without real values;
+- compare public guest session material with authenticated session material;
+- identify a safe read-only proof endpoint for the current account;
+- create a sanitized fixture only after live authorized reproduction;
+- update capability map without marking `IMPLEMENTED` unless typed code and tests are added.
+
 ### VNT-102 - Own inventory mapping
 
-Status: TODO  
+Status: DONE  
 Priority: P1
+
+Result: implemented read-only own-inventory adapter from verified authorized FR HAR evidence. Route: `GET /api/v2/wardrobe/{userId}/items?page=...&per_page=...&order=relevance`.
+
+Acceptance criteria:
+
+- route documented with sanitized user ID;
+- adapter accepts explicit `userId`;
+- host class is `site`;
+- pagination maps `current_page`, `total_pages`, `total_entries`, `per_page`, `time`;
+- item mapper exposes a minimal own-listing model;
+- sanitized fixture exists;
+- tests cover route, query, session headers, mapping, empty response, invalid response, HTTP failure and secret redaction.
 
 ### VNT-103 - Current message-thread mapping
 

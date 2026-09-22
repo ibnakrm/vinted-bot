@@ -20,6 +20,26 @@ export type {
   VintedSessionProvider,
   VintedSessionSource
 } from "./catalog/types.js";
+export { VintedInventoryClient } from "./inventory/VintedInventoryClient.js";
+export {
+  InvalidOwnInventoryInputError,
+  InvalidOwnInventoryResponseError,
+  OwnInventoryHttpError,
+  OwnInventorySessionError
+} from "./inventory/errors.js";
+export {
+  buildOwnInventoryQuery,
+  mapOwnInventoryItem,
+  mapOwnInventoryResponse
+} from "./inventory/mappers.js";
+export type {
+  OwnInventoryInput,
+  OwnInventoryItem,
+  OwnInventoryItemPrice,
+  OwnInventoryOrder,
+  OwnInventoryPagination,
+  OwnInventoryResult
+} from "./inventory/types.js";
 export {
   isSensitiveDiagnosticKey,
   redactDiagnosticText,

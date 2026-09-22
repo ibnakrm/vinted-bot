@@ -1,0 +1,114 @@
+{
+  "capability": "read_own_inventory",
+  "status": "VERIFIED",
+  "verifiedAt": "2026-09-21T17:30:00Z",
+  "market": "FR",
+  "source": "authorized_authenticated_browser_har",
+  "endpoint": {
+    "method": "GET",
+    "host": "www.vinted.fr",
+    "hostClass": "site",
+    "path": "/api/v2/wardrobe/[REDACTED_USER_ID]/items",
+    "queryParams": {
+      "page": "1|2",
+      "per_page": "20",
+      "order": "relevance"
+    }
+  },
+  "responseShape": {
+    "rootKeys": [
+      "code",
+      "items",
+      "pagination"
+    ],
+    "paginationFields": [
+      "current_page",
+      "per_page",
+      "time",
+      "total_entries",
+      "total_pages"
+    ],
+    "itemFieldsObserved": [
+      "brand",
+      "can_edit",
+      "can_push_up",
+      "currency",
+      "favourite_count",
+      "id",
+      "is_business_user",
+      "is_closed",
+      "is_draft",
+      "is_favourite",
+      "is_heavy_bulky",
+      "is_hidden",
+      "is_processing",
+      "is_reserved",
+      "item_alert_type",
+      "item_box",
+      "item_closing_action",
+      "path",
+      "photos",
+      "price",
+      "promoted",
+      "push_up",
+      "service_fee",
+      "size",
+      "stats_visible",
+      "status",
+      "title",
+      "total_item_price",
+      "transaction_permitted",
+      "url",
+      "user",
+      "user_id",
+      "view_count"
+    ],
+    "itemFieldsMapped": [
+      "id",
+      "title",
+      "user_id",
+      "price.amount",
+      "price.currency_code",
+      "status",
+      "is_draft",
+      "is_closed",
+      "is_reserved",
+      "is_hidden",
+      "can_edit",
+      "can_push_up",
+      "favourite_count",
+      "view_count",
+      "path",
+      "photos.full_size_url"
+    ]
+  },
+  "paginationObserved": {
+    "page1ItemCount": 20,
+    "page2ItemCount": 3
+  },
+  "sessionSignals": {
+    "observedHeaderNames": [
+      "accept",
+      "accept-language",
+      "locale",
+      "referer",
+      "user-agent",
+      "x-anon-id",
+      "x-csrf-token"
+    ],
+    "requiredHeaders": "unknown",
+    "optionalHeaders": "unknown",
+    "unknownRequirementHeaders": [
+      "accept",
+      "accept-language",
+      "locale",
+      "referer",
+      "user-agent",
+      "x-anon-id",
+      "x-csrf-token"
+    ],
+    "cookies": "not observable in HAR",
+    "authorization": "not observed"
+  },
+  "sensitiveValuesStored": false
+}

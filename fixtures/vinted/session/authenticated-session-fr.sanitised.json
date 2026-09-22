@@ -1,0 +1,89 @@
+{
+  "capability": "authenticated_session_recognition",
+  "status": "VERIFIED",
+  "verifiedAt": "2026-09-21T12:46:38Z",
+  "market": "FR",
+  "source": "authorized_browser_har",
+  "rawHarCommitted": false,
+  "proofRequest": {
+    "method": "GET",
+    "host": "www.vinted.fr",
+    "path": "/api/v2/users/[REDACTED_USER_ID]/items/favourites",
+    "status": 200,
+    "contentType": "application/json"
+  },
+  "whyChosen": "Best account-specific read-only endpoint present in the HAR after no current-user/me/account endpoint was found. It is stronger than unread-count endpoints because the route is scoped to a user and returns favourites payload shape, but it is not a strong current-user identity endpoint.",
+  "observedHeaderNames": [
+    "accept",
+    "accept-encoding",
+    "accept-language",
+    "locale",
+    "priority",
+    "referer",
+    "sec-ch-ua",
+    "sec-ch-ua-mobile",
+    "sec-ch-ua-platform",
+    "sec-fetch-dest",
+    "sec-fetch-mode",
+    "sec-fetch-site",
+    "user-agent",
+    "x-anon-id",
+    "x-csrf-token"
+  ],
+  "observedCookieNames": [],
+  "cookieObservation": "Request Cookie header and individual cookies were not observable in this HAR export for Vinted requests.",
+  "authorizationObservation": "Authorization header was not observed in this HAR export for Vinted requests.",
+  "responseShape": {
+    "rootKeys": [
+      "code",
+      "items",
+      "pagination"
+    ],
+    "nestedKeys": {
+      "items": [
+        "[array]"
+      ],
+      "pagination": [
+        "current_page",
+        "next_page_token",
+        "per_page",
+        "time",
+        "total_entries",
+        "total_pages"
+      ],
+      "code": "number"
+    }
+  },
+  "identityEvidence": {
+    "accountSpecific": true,
+    "currentUserEndpointObserved": false,
+    "userIdObservedInResponse": false,
+    "userIdPresentInRequestPath": true,
+    "userIdStored": "[REDACTED]"
+  },
+  "supportingAccountSpecificRequests": [
+    {
+      "method": "GET",
+      "host": "api.vinted.fr",
+      "path": "/messaging/main/users/unread_count",
+      "status": 200,
+      "contentType": "application/json",
+      "responseRootKeys": [
+        "unread_count"
+      ],
+      "identityStrength": "account-specific session evidence, not current-user identity proof"
+    },
+    {
+      "method": "GET",
+      "host": "api.vinted.fr",
+      "path": "/inbox-notifications/v1/notifications/unread_count",
+      "status": 200,
+      "contentType": "application/json",
+      "responseRootKeys": [
+        "count"
+      ],
+      "identityStrength": "account-specific session evidence, not current-user identity proof"
+    }
+  ],
+  "sensitiveValuesStored": false
+}
