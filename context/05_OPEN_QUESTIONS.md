@@ -27,3 +27,7 @@ Last updated: 2026-09-22
 - Does plain text always use `data.body`, or are there locale/market/client variants?
 - Does `/messaging/main/conversations/{conversationId}` support pagination query parameters for older/newer messages, and if so what names are used?
 - Which authenticated session signals are actually required to reproduce `/messaging/main/conversations/{conversationId}` outside the browser? Header names were observed, but no comparative removal test was performed.
+- Which authenticated session signals are actually required to reproduce `POST /messaging/main/conversations/{conversationId}/replies` outside the browser? Header names were observed, but no comparative removal test was performed.
+- What server-side validation limits apply to sent message `content`, such as maximum length or prohibited formats?
+- What current route and payload support photo message uploads/replies, if any?
+- Are offer-related replies sent through the same replies route or through a separate offer endpoint?

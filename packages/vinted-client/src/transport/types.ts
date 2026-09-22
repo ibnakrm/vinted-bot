@@ -3,6 +3,7 @@ export type VintedHostClass = "site" | "api";
 export type VintedHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface VintedRequestDiagnostics {
+  includeRequestBodyPreview?: boolean;
   includeResponseBodyPreview?: boolean;
 }
 

@@ -95,6 +95,10 @@ export class DiagnosticTransport implements VintedTransport {
   }
 
   private createRequestDiagnostic(request: VintedRequest, correlationId: string): HttpRequestDiagnostic {
+    const bodyOptions =
+      request.diagnostics?.includeRequestBodyPreview === false
+        ? { ...this.options, includeJsonPreview: false }
+        : this.options;
     const diagnostic: HttpRequestDiagnostic = {
       timestamp: new Date().toISOString(),
       method: request.method,
@@ -102,7 +106,7 @@ export class DiagnosticTransport implements VintedTransport {
       path: request.path,
       query: redactObject(request.query ?? {}) as Readonly<Record<string, unknown>>,
       headers: redactHeaders(request.headers ?? {}),
-      body: createBodyMetadata(request.body),
+      body: createBodyMetadata(request.body, bodyOptions),
       correlationId
     };
 

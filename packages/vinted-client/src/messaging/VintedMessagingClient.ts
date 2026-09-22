@@ -1,6 +1,14 @@
-import { ConversationHttpError, MessageThreadsHttpError, MessageThreadsSessionError } from "./errors.js";
-import { buildConversationPath, buildMessageThreadsQuery, mapConversationResponse, mapMessageThreadsResponse } from "./mappers.js";
-import type { ListMessageThreadsInput, ListMessageThreadsResult, VintedConversation } from "./types.js";
+import { ConversationHttpError, MessageThreadsHttpError, MessageThreadsSessionError, SendMessageHttpError } from "./errors.js";
+import {
+  buildConversationPath,
+  buildMessageThreadsQuery,
+  buildSendMessagePath,
+  buildSendMessagePayload,
+  mapConversationResponse,
+  mapMessageThreadsResponse,
+  mapSentMessageResponse
+} from "./mappers.js";
+import type { ListMessageThreadsInput, ListMessageThreadsResult, SendMessageInput, VintedConversation, VintedSentMessage } from "./types.js";
 import { hasSessionMaterial, type VintedMarket } from "../session/publicSession.js";
 import type { VintedSession, VintedSessionSource } from "../session/VintedSession.js";
 import type { VintedRequest, VintedResponse, VintedTransport } from "../transport/types.js";
@@ -30,6 +38,21 @@ function createCookieHeader(cookies: Readonly<Record<string, string>>): string {
     .join("; ");
 }
 
+function createMessagingDiagnostics(overrides: {
+  includeRequestBodyPreview?: boolean;
+  includeResponseBodyPreview?: boolean;
+}): NonNullable<VintedRequest["diagnostics"]> {
+  const diagnostics: NonNullable<VintedRequest["diagnostics"]> = {
+    includeResponseBodyPreview: overrides.includeResponseBodyPreview ?? false
+  };
+
+  if (overrides.includeRequestBodyPreview !== undefined) {
+    diagnostics.includeRequestBodyPreview = overrides.includeRequestBodyPreview;
+  }
+
+  return diagnostics;
+}
+
 export class VintedMessagingClient {
   public constructor(private readonly options: VintedMessagingClientOptions) {}
 
@@ -51,9 +74,31 @@ export class VintedMessagingClient {
     return mapConversationResponse(response.data);
   }
 
+  public async sendMessage(input: SendMessageInput): Promise<VintedSentMessage> {
+    const response = await this.requestMessagingEndpoint(buildSendMessagePath(input.conversationId), {}, {
+      method: "POST",
+      body: buildSendMessagePayload(input),
+      contentType: "application/json",
+      includeRequestBodyPreview: false,
+      includeResponseBodyPreview: false
+    });
+    if (response.status !== 201) {
+      throw new SendMessageHttpError(response.status, response.statusText);
+    }
+
+    return mapSentMessageResponse(response.data);
+  }
+
   private async requestMessagingEndpoint(
     path: string,
-    query: VintedRequest["query"] = {}
+    query: VintedRequest["query"] = {},
+    overrides: {
+      method?: VintedRequest["method"];
+      body?: unknown;
+      contentType?: string;
+      includeRequestBodyPreview?: boolean;
+      includeResponseBodyPreview?: boolean;
+    } = {}
   ): Promise<VintedResponse<unknown>> {
     const session = await resolveSession(this.options.session);
     if (!hasSessionMaterial(session)) {
@@ -63,6 +108,9 @@ export class VintedMessagingClient {
     const headers: Record<string, string> = {
       accept: "application/json, text/plain, */*"
     };
+    if (overrides.contentType !== undefined) {
+      headers["content-type"] = overrides.contentType;
+    }
     const cookie = createCookieHeader(session.cookies);
     if (cookie.length > 0) {
       headers.cookie = cookie;
@@ -79,15 +127,14 @@ export class VintedMessagingClient {
     }
 
     const request: VintedRequest = {
-      method: "GET",
+      method: overrides.method ?? "GET",
       host: "api",
       hostname: new URL(this.options.market.apiBaseUrl).hostname,
       path,
       query,
       headers,
-      diagnostics: {
-        includeResponseBodyPreview: false
-      }
+      body: overrides.body,
+      diagnostics: createMessagingDiagnostics(overrides)
     };
 
     if (this.options.timeoutMs !== undefined) {

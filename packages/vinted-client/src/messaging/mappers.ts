@@ -1,6 +1,8 @@
 import {
   InvalidConversationInputError,
   InvalidConversationResponseError,
+  InvalidSendMessageInputError,
+  InvalidSentMessageResponseError,
   InvalidMessageThreadsInputError,
   InvalidMessageThreadsResponseError
 } from "./errors.js";
@@ -9,10 +11,13 @@ import type {
   ListMessageThreadsResult,
   MessagePagination,
   MessageThreadPagination,
+  SendMessageInput,
+  SendMessagePayload,
   VintedConversation,
   VintedMessage,
   VintedMessageThread,
-  VintedMessageThreadLastMessage
+  VintedMessageThreadLastMessage,
+  VintedSentMessage
 } from "./types.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -200,6 +205,31 @@ export function buildConversationPath(conversationId: string | number): string {
   return `/messaging/main/conversations/${encodeURIComponent(String(conversationId))}`;
 }
 
+export function buildSendMessagePath(conversationId: string | number): string {
+  try {
+    return `${buildConversationPath(conversationId)}/replies`;
+  } catch (error) {
+    if (error instanceof InvalidConversationInputError) {
+      throw new InvalidSendMessageInputError(error.message);
+    }
+    throw error;
+  }
+}
+
+export function buildSendMessagePayload(input: SendMessageInput): SendMessagePayload {
+  if (input.content.length === 0 || input.content.trim().length === 0) {
+    throw new InvalidSendMessageInputError("content must not be blank");
+  }
+
+  buildSendMessagePath(input.conversationId);
+
+  return {
+    content: input.content,
+    is_personal_data_sharing_check_skipped: false,
+    photo_temp_uuids: null
+  };
+}
+
 function mapMessageText(rawMessage: UnknownRecord): string | undefined {
   if (rawMessage.message_type !== "text" || !isRecord(rawMessage.data)) {
     return undefined;
@@ -309,4 +339,38 @@ export function mapConversationResponse(value: unknown): VintedConversation {
   }
 
   return conversation;
+}
+
+export function mapSentMessageResponse(value: unknown): VintedSentMessage {
+  if (!isRecord(value)) {
+    throw new InvalidSentMessageResponseError("Sent message response is not an object");
+  }
+
+  const id = requiredStringOrNumber(value.id, new InvalidSentMessageResponseError("Sent message is missing an id"));
+  const message: VintedSentMessage = { id };
+  const conversationId = typeof value.conversation_id === "string" || typeof value.conversation_id === "number"
+    ? value.conversation_id
+    : undefined;
+  const senderId = typeof value.sender_id === "string" || typeof value.sender_id === "number" ? value.sender_id : undefined;
+  const createdAt = optionalString(value.created_at);
+  const messageType = optionalString(value.message_type);
+  const text = isRecord(value.data) ? optionalString(value.data.content) : undefined;
+
+  if (conversationId !== undefined) {
+    message.conversationId = conversationId;
+  }
+  if (senderId !== undefined) {
+    message.senderId = senderId;
+  }
+  if (createdAt !== undefined) {
+    message.createdAt = createdAt;
+  }
+  if (messageType !== undefined) {
+    message.messageType = messageType;
+  }
+  if (text !== undefined) {
+    message.text = text;
+  }
+
+  return message;
 }

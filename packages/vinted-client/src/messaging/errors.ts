@@ -56,3 +56,29 @@ export class InvalidConversationResponseError extends Error {
     this.name = "InvalidConversationResponseError";
   }
 }
+
+export class SendMessageHttpError extends Error {
+  public readonly status: number;
+  public readonly statusText: string | undefined;
+
+  public constructor(status: number, statusText?: string) {
+    super(`Vinted send message request failed with HTTP ${status}${statusText === undefined ? "" : ` ${statusText}`}`);
+    this.name = "SendMessageHttpError";
+    this.status = status;
+    this.statusText = statusText;
+  }
+}
+
+export class InvalidSendMessageInputError extends Error {
+  public constructor(message: string) {
+    super(message);
+    this.name = "InvalidSendMessageInputError";
+  }
+}
+
+export class InvalidSentMessageResponseError extends Error {
+  public constructor(message = "Invalid Vinted sent message response") {
+    super(message);
+    this.name = "InvalidSentMessageResponseError";
+  }
+}

@@ -8,7 +8,7 @@ Phase 0 - Research and foundation.
 
 ## Active Backlog Item
 
-Next: `VNT-301 - Send message mapping`
+Next: `VNT-302 - Favorites/event mapping`
 
 ## Progress
 
@@ -23,7 +23,8 @@ Next: `VNT-301 - Send message mapping`
 - `VNT-102 - Own inventory mapping` is complete from a verified authorized FR HAR route: `GET /api/v2/wardrobe/[REDACTED_USER_ID]/items`. `VintedInventoryClient` implements read-only own inventory with sanitized fixture and tests.
 - `VNT-103 - Current message-thread mapping` is complete from a verified authorized FR HAR route: `GET /messaging/main/inbox` on `api.vinted.fr`, with cursor pagination via `next_cursor`. `VintedMessagingClient` implements read-only thread listing with privacy-first mapping, diagnostics body preview disabled for messaging responses, sanitized fixture and tests.
 - `VNT-104 - Message read adapter` is complete from a verified authorized FR HAR route: `GET /messaging/main/conversations/[CONVERSATION_ID]` on `api.vinted.fr`. `VintedMessagingClient.getConversation` implements read-only conversation detail with plain text extraction for `message_type=text` plus `data.body`, diagnostics body preview disabled, sanitized fixture and tests.
+- `VNT-301 - Send message mapping` is complete from a verified authorized FR HAR route: `POST /messaging/main/conversations/[CONVERSATION_ID]/replies` on `api.vinted.fr`. `VintedMessagingClient.sendMessage` sends the exact observed plain-text payload with `is_personal_data_sharing_check_skipped=false` and `photo_temp_uuids=null`, disables request/response diagnostic previews, maps the 201 response and has sanitized fixture/tests.
 
 ## Current Priority
 
-Next: `VNT-301 - Send message mapping`, only as a research task with fresh authorized evidence. Do not implement messaging writes until the write endpoint, payload, auth/session behavior and safety constraints are verified.
+Next: `VNT-302 - Favorites/event mapping` or another explicitly scoped research task. Do not implement photo messages, offers, automatic replies, bulk messaging or listing writes without fresh authorized evidence and separate acceptance criteria.

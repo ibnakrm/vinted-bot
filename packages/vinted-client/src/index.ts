@@ -47,27 +47,36 @@ export {
   InvalidConversationResponseError,
   InvalidMessageThreadsInputError,
   InvalidMessageThreadsResponseError,
+  InvalidSendMessageInputError,
+  InvalidSentMessageResponseError,
   MessageThreadsHttpError,
-  MessageThreadsSessionError
+  MessageThreadsSessionError,
+  SendMessageHttpError
 } from "./messaging/errors.js";
 export {
   buildConversationPath,
   buildMessageThreadsQuery,
+  buildSendMessagePath,
+  buildSendMessagePayload,
   mapConversationMessage,
   mapConversationResponse,
   mapMessageThread,
-  mapMessageThreadsResponse
+  mapMessageThreadsResponse,
+  mapSentMessageResponse
 } from "./messaging/mappers.js";
 export type {
   ListMessageThreadsInput,
   ListMessageThreadsResult,
   MessagePagination,
   MessageThreadPagination,
+  SendMessageInput,
+  SendMessagePayload,
   VintedConversation,
   VintedMessage,
   VintedMessageThread,
   VintedMessageThreadLastMessage,
-  VintedMessageThreadOppositeUser
+  VintedMessageThreadOppositeUser,
+  VintedSentMessage
 } from "./messaging/types.js";
 export {
   isSensitiveDiagnosticKey,

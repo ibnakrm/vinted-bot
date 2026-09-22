@@ -25,7 +25,7 @@ Statuses:
 | Read own inventory | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-21. Route: `GET https://www.vinted.fr/api/v2/wardrobe/[REDACTED_USER_ID]/items?page=1&per_page=20&order=relevance` and page 2 returned 200 JSON with `items`, `pagination`, `code`; implemented in `VintedInventoryClient` with tests and sanitized fixture `fixtures/vinted/inventory/own-inventory-fr.sanitised.json`. | P1 |
 | Read message threads | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-22. Route: `GET https://api.vinted.fr/messaging/main/inbox`, with `next_cursor` pagination observed; implemented in `VintedMessagingClient` with privacy-first mapper, diagnostics response preview disabled and sanitized fixture `fixtures/vinted/messaging/message-threads-fr.sanitised.json`. | P1 |
 | Read messages | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-22. Route: `GET https://api.vinted.fr/messaging/main/conversations/[CONVERSATION_ID]`; implemented in `VintedMessagingClient.getConversation` with metadata mapping, plain text extraction from `message_type=text` plus `data.body`, diagnostics response preview disabled and sanitized fixture `fixtures/vinted/messaging/conversation-detail-fr.sanitised.json`. | P1 |
-| Send message | UNKNOWN | Needs current authenticated write mapping. | P1 |
+| Send message | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-22. Route: `POST https://api.vinted.fr/messaging/main/conversations/[CONVERSATION_ID]/replies` returned `201`; implemented in `VintedMessagingClient.sendMessage` for plain text replies only, with exact minimal payload, request/response diagnostic previews disabled and sanitized fixture `fixtures/vinted/messaging/send-message-fr.sanitised.json`. | P1 |
 | Create listing | UNKNOWN | Research target. | P1 |
 | Upload listing photos | UNKNOWN | Research target. | P1 |
 | Update listing | UNKNOWN | Research target. | P1 |
@@ -170,6 +170,48 @@ Implementation:
 Important limitation:
 
 - The raw HAR was not available in local paths during this implementation pass. The code and fixture stay conservative and do not infer additional message `data` schemas beyond the supplied route/field evidence and sanitized text fixture.
+
+### Message Send
+
+Status: `IMPLEMENTED`
+
+Current verified route from authorized messaging HAR evidence:
+
+- verification date: 2026-09-22
+- market/domain: FR, `https://api.vinted.fr`
+- host class: `api`
+- method: `POST`
+- sanitized route: `/messaging/main/conversations/[CONVERSATION_ID]/replies`
+- observed response: `201 Created`
+- request content type: `application/json`
+- query: none observed
+- request payload for simple text:
+  - `content`
+  - `is_personal_data_sharing_check_skipped=false`
+  - `photo_temp_uuids=null`
+- response fields observed: `conversation_id`, `created_at`, `data`, `id`, `message_type`, `sender_id`
+- response `data` fields observed: `content`, `id`
+- observed `message_type`: `reply_plain`
+- observed request header names: `accept`, `accept-language`, `content-type`, `locale`, `origin`, `platform`, `referer`, `user-agent`, `x-anon-id`, `x-csrf-token`, `x-next-app`
+- cookies: not established from this capture
+- `Authorization`: not observed
+- response fixture: `fixtures/vinted/messaging/send-message-fr.sanitised.json`
+
+Implementation:
+
+- adapter: `packages/vinted-client/src/messaging/VintedMessagingClient.ts`
+- method: `sendMessage(input: SendMessageInput)`
+- public input: `conversationId`, `content`
+- validation: rejects empty conversation ID, empty content and whitespace-only content
+- payload: sends only the observed `content`, `is_personal_data_sharing_check_skipped=false`, `photo_temp_uuids=null`
+- privacy: disables both request and response body previews because private message text appears in both directions
+
+Explicitly not implemented:
+
+- photo message upload/sending
+- create conversation
+- send offer
+- automatic replies or bulk messaging
 
 ### Authenticated Session Recognition
 

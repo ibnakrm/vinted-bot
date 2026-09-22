@@ -7,16 +7,22 @@ import {
   InvalidConversationResponseError,
   InvalidMessageThreadsInputError,
   InvalidMessageThreadsResponseError,
+  InvalidSendMessageInputError,
+  InvalidSentMessageResponseError,
   MessageThreadsHttpError,
-  MessageThreadsSessionError
+  MessageThreadsSessionError,
+  SendMessageHttpError
 } from "./errors.js";
 import {
   buildConversationPath,
   buildMessageThreadsQuery,
+  buildSendMessagePath,
+  buildSendMessagePayload,
   mapConversationMessage,
   mapConversationResponse,
   mapMessageThread,
-  mapMessageThreadsResponse
+  mapMessageThreadsResponse,
+  mapSentMessageResponse
 } from "./mappers.js";
 import type { VintedMarket } from "../session/publicSession.js";
 import type { VintedSession } from "../session/VintedSession.js";
@@ -25,6 +31,7 @@ import { MemoryDiagnosticSink } from "../diagnostics/sinks.js";
 import type { VintedRequest, VintedResponse, VintedTransport } from "../transport/types.js";
 import conversationFixture from "./__fixtures__/conversation-detail-response.sanitised.json" with { type: "json" };
 import messageThreadsFixture from "./__fixtures__/message-threads-response.sanitised.json" with { type: "json" };
+import sendMessageFixture from "./__fixtures__/send-message-response.sanitised.json" with { type: "json" };
 
 const market: VintedMarket = {
   siteBaseUrl: "https://www.vinted.fr",
@@ -84,6 +91,37 @@ describe("buildConversationPath", () => {
   it("rejects invalid conversation IDs", () => {
     expect(() => buildConversationPath("")).toThrow(InvalidConversationInputError);
     expect(() => buildConversationPath(Number.NaN)).toThrow(InvalidConversationInputError);
+  });
+});
+
+describe("send message request mapping", () => {
+  it("encodes conversation IDs in the observed replies path", () => {
+    expect(buildSendMessagePath("conversation id/with slash")).toBe(
+      "/messaging/main/conversations/conversation%20id%2Fwith%20slash/replies"
+    );
+  });
+
+  it("builds the exact observed text payload without modifying content", () => {
+    expect(
+      buildSendMessagePayload({
+        conversationId: "conversation_111",
+        content: "  PRIVATE_MESSAGE_SECRET  "
+      })
+    ).toEqual({
+      content: "  PRIVATE_MESSAGE_SECRET  ",
+      is_personal_data_sharing_check_skipped: false,
+      photo_temp_uuids: null
+    });
+  });
+
+  it("rejects invalid conversation IDs and blank content", () => {
+    expect(() => buildSendMessagePath("")).toThrow(InvalidSendMessageInputError);
+    expect(() => buildSendMessagePayload({ conversationId: "conversation_111", content: "" })).toThrow(
+      InvalidSendMessageInputError
+    );
+    expect(() => buildSendMessagePayload({ conversationId: "conversation_111", content: "   " })).toThrow(
+      InvalidSendMessageInputError
+    );
   });
 });
 
@@ -225,6 +263,30 @@ describe("conversation detail response mapping", () => {
     expect(() => mapConversationResponse("not-json")).toThrow(InvalidConversationResponseError);
     expect(() => mapConversationResponse({ id: "conversation_1001" })).toThrow(InvalidConversationResponseError);
     expect(() => mapConversationMessage({ message_type: "text" })).toThrow(InvalidConversationResponseError);
+  });
+});
+
+describe("sent message response mapping", () => {
+  it("maps reply_plain response metadata and data.content text", () => {
+    expect(mapSentMessageResponse(sendMessageFixture.plainText)).toEqual({
+      id: "message_333",
+      conversationId: "conversation_111",
+      senderId: "user_222",
+      createdAt: "2026-09-22T12:00:00Z",
+      messageType: "reply_plain",
+      text: "SANITISED_MESSAGE"
+    });
+  });
+
+  it("tolerates missing optional sent message fields", () => {
+    expect(mapSentMessageResponse({ id: 123, data: {} })).toEqual({
+      id: 123
+    });
+  });
+
+  it("rejects invalid sent message payloads", () => {
+    expect(() => mapSentMessageResponse("not-json")).toThrow(InvalidSentMessageResponseError);
+    expect(() => mapSentMessageResponse({ data: { content: "missing id" } })).toThrow(InvalidSentMessageResponseError);
   });
 });
 
@@ -379,6 +441,120 @@ describe("VintedMessagingClient", () => {
     });
 
     await expect(client.getConversation("conversation_1001")).rejects.toThrow(ConversationHttpError);
+  });
+
+  it("sends text messages with POST, api host, JSON content type and exact minimal payload", async () => {
+    const transport = new StubTransport({
+      status: 201,
+      statusText: "Created",
+      headers: {
+        "content-type": "application/json"
+      },
+      data: sendMessageFixture.plainText
+    });
+    const client = new VintedMessagingClient({ market, session, transport });
+
+    const result = await client.sendMessage({
+      conversationId: "conversation id/with slash",
+      content: "  SANITISED_MESSAGE  "
+    });
+
+    expect(result).toMatchObject({
+      id: "message_333",
+      messageType: "reply_plain",
+      text: "SANITISED_MESSAGE"
+    });
+    expect(transport.requests[0]).toMatchObject({
+      method: "POST",
+      host: "api",
+      hostname: "api.vinted.fr",
+      path: "/messaging/main/conversations/conversation%20id%2Fwith%20slash/replies",
+      query: {},
+      headers: {
+        accept: "application/json, text/plain, */*",
+        "content-type": "application/json",
+        cookie: "v_udt=cookie-live; access_token_web=access-live",
+        "accept-language": "fr-FR",
+        locale: "fr-FR",
+        "x-anon-id": "anon-live",
+        "x-csrf-token": "csrf-live"
+      },
+      body: {
+        content: "  SANITISED_MESSAGE  ",
+        is_personal_data_sharing_check_skipped: false,
+        photo_temp_uuids: null
+      },
+      diagnostics: {
+        includeRequestBodyPreview: false,
+        includeResponseBodyPreview: false
+      }
+    });
+  });
+
+  it("throws send-message errors on HTTP non-201", async () => {
+    const client = new VintedMessagingClient({
+      market,
+      session,
+      transport: new StubTransport({
+        status: 403,
+        statusText: "Forbidden",
+        headers: {},
+        data: { error: "forbidden" }
+      })
+    });
+
+    await expect(client.sendMessage({ conversationId: "conversation_111", content: "hello" })).rejects.toThrow(
+      SendMessageHttpError
+    );
+  });
+
+  it("sends private content to transport but never includes request or response bodies in diagnostics", async () => {
+    const sink = new MemoryDiagnosticSink();
+    const privateMessageBody = "PRIVATE_MESSAGE_SECRET";
+    const innerTransport = new StubTransport({
+      status: 201,
+      statusText: "Created",
+      headers: {
+        "content-type": "application/json"
+      },
+      data: {
+        conversation_id: "conversation_111",
+        created_at: "2026-09-22T12:00:00Z",
+        data: {
+          content: privateMessageBody,
+          id: "message_data_333"
+        },
+        id: "message_333",
+        message_type: "reply_plain",
+        sender_id: "user_222"
+      }
+    });
+    const client = new VintedMessagingClient({
+      market,
+      session,
+      transport: new DiagnosticTransport(innerTransport, sink, { includeJsonPreview: true })
+    });
+
+    const result = await client.sendMessage({
+      conversationId: "conversation_111",
+      content: privateMessageBody
+    });
+
+    expect(innerTransport.requests[0]?.body).toEqual({
+      content: privateMessageBody,
+      is_personal_data_sharing_check_skipped: false,
+      photo_temp_uuids: null
+    });
+    expect(result.text).toBe(privateMessageBody);
+    const serialized = JSON.stringify(sink.entries);
+    expect(serialized).not.toContain(privateMessageBody);
+    expect(serialized).not.toContain("cookie-live");
+    expect(serialized).not.toContain("access-live");
+    expect(serialized).not.toContain("anon-live");
+    expect(serialized).not.toContain("csrf-live");
+    expect(sink.entries[0]?.request.body.preview).toBeUndefined();
+    expect(sink.entries[0]?.response?.body.preview).toBeUndefined();
+    expect(serialized).toContain("[REDACTED]");
   });
 
   it("returns private text to code but never includes it in serialized diagnostics", async () => {

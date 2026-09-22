@@ -202,8 +202,24 @@ Priority: P1
 
 ### VNT-301 - Send message mapping
 
-Status: TODO  
+Status: DONE
 Priority: P1
+
+Result: implemented scoped plain-text message replies from verified authorized FR HAR evidence. Route: `POST /messaging/main/conversations/{conversationId}/replies` on `api.vinted.fr`, observed status `201`.
+
+Acceptance criteria:
+
+- route documented with host class `api`;
+- adapter accepts explicit `conversationId` and `content`;
+- conversation ID is encoded as a path segment;
+- content is forwarded unchanged after rejecting empty/whitespace-only input;
+- public API does not expose `is_personal_data_sharing_check_skipped`;
+- payload sends only `content`, `is_personal_data_sharing_check_skipped=false`, and `photo_temp_uuids=null`;
+- `Content-Type: application/json` is sent;
+- response mapper exposes sent-message metadata and `data.content` text;
+- request and response diagnostic previews are disabled;
+- sanitized fixture exists without real message content, real IDs or real private data;
+- tests cover method, host, path encoding, payload, 201 response, mapping, invalid inputs, HTTP errors, invalid response and privacy diagnostics.
 
 ### VNT-302 - Favorites/event mapping
 

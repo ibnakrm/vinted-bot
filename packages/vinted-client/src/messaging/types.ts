@@ -61,3 +61,23 @@ export interface VintedConversation {
   messages: readonly VintedMessage[];
   pagination?: MessagePagination;
 }
+
+export interface SendMessageInput {
+  conversationId: string | number;
+  content: string;
+}
+
+export interface SendMessagePayload {
+  content: string;
+  is_personal_data_sharing_check_skipped: false;
+  photo_temp_uuids: null;
+}
+
+export interface VintedSentMessage {
+  id: string | number;
+  conversationId?: string | number;
+  senderId?: string | number;
+  createdAt?: string;
+  messageType?: string;
+  text?: string;
+}
