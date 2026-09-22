@@ -75,7 +75,7 @@ export class DiagnosticTransport implements VintedTransport {
         ...request,
         requestId: correlationId
       });
-      const responseDiagnostic = this.createResponseDiagnostic(response, correlationId, Date.now() - startedAt);
+      const responseDiagnostic = this.createResponseDiagnostic(response, request, correlationId, Date.now() - startedAt);
 
       await emit(this.sinks, {
         kind: "http",
@@ -115,13 +115,18 @@ export class DiagnosticTransport implements VintedTransport {
 
   private createResponseDiagnostic<T>(
     response: VintedResponse<T>,
+    request: VintedRequest,
     correlationId: string,
     durationMs: number
   ): HttpResponseDiagnostic {
+    const bodyOptions =
+      request.diagnostics?.includeResponseBodyPreview === false
+        ? { ...this.options, includeJsonPreview: false }
+        : this.options;
     const diagnostic: HttpResponseDiagnostic = {
       status: response.status,
       headers: redactHeaders(response.headers),
-      body: createBodyMetadata(response.data, this.options),
+      body: createBodyMetadata(response.data, bodyOptions),
       durationMs,
       correlationId
     };

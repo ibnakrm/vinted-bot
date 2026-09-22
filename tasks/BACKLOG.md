@@ -6,7 +6,7 @@ Statuses: TODO / IN_PROGRESS / BLOCKED / DONE
 
 ### VNT-001 - Bootstrap repository
 
-Status: DONE  
+Status: DONE
 Priority: P0
 
 Acceptance criteria:
@@ -21,7 +21,7 @@ Acceptance criteria:
 
 ### VNT-002 - Implement redacted HTTP diagnostics
 
-Status: DONE  
+Status: DONE
 Priority: P0
 
 Acceptance criteria:
@@ -143,15 +143,26 @@ Acceptance criteria:
 
 ### VNT-103 - Current message-thread mapping
 
-Status: BLOCKED  
+Status: DONE
 Priority: P1
 
-Blocker: local authorized HAR inspection found only unread-count endpoints (`/messaging/main/users/unread_count` and `/inbox-notifications/v1/notifications/unread_count`), not a thread-list route. Capture a new authorized read-only HAR while opening and scrolling the messaging/inbox conversation list.
+Result: implemented read-only message-thread listing from verified authorized FR HAR evidence. Route: `GET /messaging/main/inbox` on `api.vinted.fr`, with optional `next_cursor` pagination. The adapter maps metadata only and disables response body preview diagnostics for messaging.
+
+Acceptance criteria:
+
+- route documented with host class `api`;
+- adapter supports `nextCursor` only;
+- no `page`, `perPage` or `userId` parameter added because none was observed;
+- thread mapper exposes conversation metadata, last-message metadata and unread/deletable flags only;
+- sanitized fixture exists without real message content, real usernames, real IDs or real cursors;
+- tests cover request shape, cursor pagination, mapping, empty response, optional fields, invalid response, HTTP failure and privacy diagnostics.
 
 ### VNT-104 - Message read adapter
 
 Status: TODO  
 Priority: P1
+
+Goal: research and implement read-only message detail only after scoped sanitized evidence for `GET /messaging/main/conversations/[CONVERSATION_ID]`; do not implement writes.
 
 ## EPIC 2 - Seller Writes
 

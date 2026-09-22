@@ -1,6 +1,6 @@
 # Vinted API Capability Map
 
-Last updated: 2026-09-21
+Last updated: 2026-09-22
 
 Statuses:
 
@@ -23,8 +23,8 @@ Statuses:
 | User profile | FOUND | Multiple historical wrappers/scrapers support it; current behavior unverified. | P1 |
 | Seller inventory | FOUND | Multiple scraper products expose it historically/currently; current route unverified here. | P1 |
 | Read own inventory | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-21. Route: `GET https://www.vinted.fr/api/v2/wardrobe/[REDACTED_USER_ID]/items?page=1&per_page=20&order=relevance` and page 2 returned 200 JSON with `items`, `pagination`, `code`; implemented in `VintedInventoryClient` with tests and sanitized fixture `fixtures/vinted/inventory/own-inventory-fr.sanitised.json`. | P1 |
-| Read message threads | FOUND | Historical code used `/api/v2/users/{user_id}/msg_threads`; VNT-103 inspected local authorized HARs on 2026-09-22 and found only unread-count endpoints, not a current thread-list route. Needs targeted messaging/inbox HAR capture. | P1 |
-| Read messages | FOUND | Historical scraper parsed `msg_thread.messages`; not reproduced. | P1 |
+| Read message threads | IMPLEMENTED | Verified from authorized authenticated browser HAR on 2026-09-22. Route: `GET https://api.vinted.fr/messaging/main/inbox`, with `next_cursor` pagination observed; implemented in `VintedMessagingClient` with privacy-first mapper, diagnostics response preview disabled and sanitized fixture `fixtures/vinted/messaging/message-threads-fr.sanitised.json`. | P1 |
+| Read messages | FOUND | Historical scraper parsed `msg_thread.messages`; current authorized HAR also observed candidate detail route `GET /messaging/main/conversations/[CONVERSATION_ID] -> 200`, but VNT-103 did not implement it. | P1 |
 | Send message | UNKNOWN | Needs current authenticated write mapping. | P1 |
 | Create listing | UNKNOWN | Research target. | P1 |
 | Upload listing photos | UNKNOWN | Research target. | P1 |
@@ -94,14 +94,44 @@ Historical route:
 
 - `/api/v2/users/{user_id}/msg_threads`
 
-Status remains `FOUND` until reproduced against a current authorized account session.
+Status: `IMPLEMENTED`
 
-VNT-103 HAR inspection on 2026-09-22 found only account-specific counters:
+VNT-103 initially inspected local authorized HARs on 2026-09-22 and found only account-specific counters:
 
 - `GET https://api.vinted.fr/messaging/main/users/unread_count` -> `200`, root key `unread_count`
 - `GET https://api.vinted.fr/inbox-notifications/v1/notifications/unread_count` -> `200`, root key `count`
 
-These routes do not return thread collections, participants, last-message metadata or pagination. They must not be treated as message-thread listing endpoints. A targeted DevTools capture from the messaging/inbox page is required; see `context/09_MESSAGE_THREADS_RESEARCH.md`.
+These counter routes do not return thread collections, participants, last-message metadata or pagination. They must not be treated as message-thread listing endpoints.
+
+Current verified route from a later authorized messaging HAR:
+
+- verification date: 2026-09-22
+- market/domain: FR, `https://api.vinted.fr`
+- host class: `api`
+- method: `GET`
+- sanitized route: `/messaging/main/inbox`
+- first page query: none
+- next page query: `next_cursor=[REDACTED_CURSOR]`
+- observed response: `200 OK`, `application/json`
+- response root keys: `conversations`, `pagination`
+- conversation fields observed: `conversation_type`, `created_at`, `data`, `id`, `is_deletable`, `is_unread_by_current_user`, `labels`, `last_message`, `nudges`, `opposite_users`
+- last-message fields observed: `conversation_id`, `created_at`, `data`, `id`, `message_type`, `sender_id`
+- pagination fields observed: `has_next`, `has_prev`, `next_cursor`, `prev_cursor`
+- observed request header names: `accept`, `accept-language`, `locale`, `origin`, `platform`, `referer`, `user-agent`, `x-anon-id`, `x-csrf-token`, `x-next-app`
+- cookies: not observable in HAR; do not conclude they are absent or unnecessary
+- `Authorization`: not observed
+- response fixture: `fixtures/vinted/messaging/message-threads-fr.sanitised.json`
+
+Implementation:
+
+- adapter: `packages/vinted-client/src/messaging/VintedMessagingClient.ts`
+- mapper/types/errors/tests under `packages/vinted-client/src/messaging/`
+- privacy: mapper stores metadata only, never message content; request diagnostics set `includeResponseBodyPreview: false`
+- cursor handling: `next_cursor` is opaque and must not be decoded or interpreted
+
+Candidate for VNT-104 only, not implemented in VNT-103:
+
+- `GET /messaging/main/conversations/[CONVERSATION_ID]` -> `200`
 
 ### Authenticated Session Recognition
 

@@ -13,3 +13,7 @@
 - Completed `VNT-101` for authenticated-session recognition: analyzed an authorized FR browser HAR without committing raw data, selected the sanitized favourites endpoint as best read-only proof, created `fixtures/vinted/session/authenticated-session-fr.sanitised.json`, marked authenticated-session recognition `VERIFIED`, and left strong current-user identity proof as `FOUND`/open because no current-user endpoint appeared in the HAR.
 - Completed `VNT-102`: verified `/api/v2/wardrobe/[REDACTED_USER_ID]/items` from an authorized FR browser HAR, implemented `VintedInventoryClient` with minimal own-listing mapper, pagination, sanitized fixtures and tests, and marked `Read own inventory` as `IMPLEMENTED`.
 - Started `VNT-103`: inspected local authorized HARs for messaging/thread routes and found only unread-count endpoints, not a thread-list route; documented targeted capture steps in `context/09_MESSAGE_THREADS_RESEARCH.md` and marked VNT-103 blocked pending a messaging/inbox HAR.
+
+## 2026-09-22
+
+- Completed `VNT-103`: documented verified `GET /messaging/main/inbox` on `api.vinted.fr`, implemented privacy-first `VintedMessagingClient.listMessageThreads`, disabled messaging response previews in diagnostics, added sanitized fixtures/tests, and marked `Read message threads` as `IMPLEMENTED`.

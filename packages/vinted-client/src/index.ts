@@ -40,6 +40,26 @@ export type {
   OwnInventoryPagination,
   OwnInventoryResult
 } from "./inventory/types.js";
+export { VintedMessagingClient } from "./messaging/VintedMessagingClient.js";
+export {
+  InvalidMessageThreadsInputError,
+  InvalidMessageThreadsResponseError,
+  MessageThreadsHttpError,
+  MessageThreadsSessionError
+} from "./messaging/errors.js";
+export {
+  buildMessageThreadsQuery,
+  mapMessageThread,
+  mapMessageThreadsResponse
+} from "./messaging/mappers.js";
+export type {
+  ListMessageThreadsInput,
+  ListMessageThreadsResult,
+  MessageThreadPagination,
+  VintedMessageThread,
+  VintedMessageThreadLastMessage,
+  VintedMessageThreadOppositeUser
+} from "./messaging/types.js";
 export {
   isSensitiveDiagnosticKey,
   redactDiagnosticText,
@@ -80,6 +100,7 @@ export type { FetchVintedTransportConfig } from "./transport/FetchVintedTranspor
 export type {
   VintedHostClass,
   VintedRequest,
+  VintedRequestDiagnostics,
   VintedResponse,
   VintedTransport
 } from "./transport/types.js";

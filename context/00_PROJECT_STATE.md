@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-09-21
+Last updated: 2026-09-22
 
 ## Current Phase
 
@@ -8,7 +8,7 @@ Phase 0 - Research and foundation.
 
 ## Active Backlog Item
 
-Next: `VNT-103 - Current message-thread mapping`
+Next: `VNT-104 - Message read adapter`
 
 ## Progress
 
@@ -21,8 +21,8 @@ Next: `VNT-103 - Current message-thread mapping`
 - `VNT-004A - Harden verified public client foundation` is complete: diagnostics sanitize error messages/final URLs, public session acquisition no longer hardcodes FR language, catalog inputs are validated, `item_box` is display-only metadata, and `nvm use` validates Node 24.21.0/npm 11.19.0 locally.
 - `VNT-101 - Authenticated session research` is complete for authenticated-session recognition from an authorized FR browser HAR. Sanitized evidence is stored in `fixtures/vinted/session/authenticated-session-fr.sanitised.json`; no raw HAR is committed. A strong current-user identity endpoint remains unverified because no `/me/current/account` route was present in the HAR.
 - `VNT-102 - Own inventory mapping` is complete from a verified authorized FR HAR route: `GET /api/v2/wardrobe/[REDACTED_USER_ID]/items`. `VintedInventoryClient` implements read-only own inventory with sanitized fixture and tests.
-- `VNT-103 - Current message-thread mapping` inspected local authorized HARs and found only unread-count endpoints, not a thread-list route. It is blocked pending a targeted messaging/inbox HAR capture.
+- `VNT-103 - Current message-thread mapping` is complete from a verified authorized FR HAR route: `GET /messaging/main/inbox` on `api.vinted.fr`, with cursor pagination via `next_cursor`. `VintedMessagingClient` implements read-only thread listing with privacy-first mapping, diagnostics body preview disabled for messaging responses, sanitized fixture and tests.
 
 ## Current Priority
 
-Next: unblock `VNT-103` with a read-only authorized HAR captured while opening and scrolling the messaging/inbox conversation list. Do not implement messaging adapters until a current thread-list route is observed.
+Next: `VNT-104 - Message read adapter`, using the observed candidate route `GET /messaging/main/conversations/[CONVERSATION_ID]` only after a separate scoped implementation pass with sanitized evidence and tests. Do not implement messaging writes.

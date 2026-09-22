@@ -5,9 +5,9 @@ Backlog item: `VNT-103 - Current message-thread mapping`
 
 ## Status
 
-No current message-thread list endpoint was found in the local authorized HAR inspected for VNT-103.
+Current message-thread list endpoint is verified from an authorized FR browser HAR and implemented as a read-only adapter.
 
-Current status for `Read message threads`: `FOUND` from historical evidence only, not current reproduction.
+Current status for `Read message threads`: `IMPLEMENTED`.
 
 ## HAR Analysis - 2026-09-22
 
@@ -47,6 +47,64 @@ Searched for route/path/response signals related to:
 
 No route matching `/api/v2/users/{user_id}/msg_threads`, `/threads`, `/conversations`, `/messages` or a response containing a thread/conversation collection was present in the HAR.
 
+## Verified Inbox Route - 2026-09-22
+
+Source: later authorized browser HAR from the user's own logged-in Vinted session. The raw HAR is outside the repository and must never be committed.
+
+Verified request:
+
+- `GET https://api.vinted.fr/messaging/main/inbox`
+- host class: `api`
+- path: `/messaging/main/inbox`
+- status: `200`
+- content type: `application/json`
+
+Pagination request observed:
+
+- `GET https://api.vinted.fr/messaging/main/inbox?next_cursor=[REDACTED]`
+- status: `200`
+
+Observed request header names:
+
+- `accept`
+- `accept-language`
+- `locale`
+- `origin`
+- `platform`
+- `referer`
+- `user-agent`
+- `x-anon-id`
+- `x-csrf-token`
+- `x-next-app`
+
+Important auth notes:
+
+- Cookies were not observable in the HAR; do not conclude they are absent or unnecessary.
+- `Authorization` was not observed.
+- Header names above are observed, not proven mandatory.
+
+Observed response shape:
+
+- root keys: `conversations`, `pagination`
+- conversation fields: `conversation_type`, `created_at`, `data`, `id`, `is_deletable`, `is_unread_by_current_user`, `labels`, `last_message`, `nudges`, `opposite_users`
+- `last_message` fields: `conversation_id`, `created_at`, `data`, `id`, `message_type`, `sender_id`
+- pagination fields: `has_next`, `has_prev`, `next_cursor`, `prev_cursor`
+
+Implementation notes:
+
+- `packages/vinted-client/src/messaging/VintedMessagingClient.ts` sends `host: "api"` and path `/messaging/main/inbox`.
+- `ListMessageThreadsInput` only supports `nextCursor`; no `page`, `perPage` or `userId` was added because those were not observed.
+- The mapper exposes metadata only: conversation ID/type, timestamps, unread/deletable flags, last-message metadata and opposite-user `type`.
+- Message body/content, real usernames and photos are not mapped.
+- `next_cursor` is stored as an opaque string and must not be decoded or interpreted.
+- Messaging requests set `diagnostics.includeResponseBodyPreview = false`, so response JSON previews are suppressed even if a diagnostic transport enables previews globally.
+- Sanitized fixture: `fixtures/vinted/messaging/message-threads-fr.sanitised.json`.
+
+Route observed for a future scoped task only:
+
+- `GET /messaging/main/conversations/[CONVERSATION_ID]` -> `200`
+- Candidate for `VNT-104 - Message read adapter`; not implemented by VNT-103.
+
 ## Diagnostic Privacy Decision
 
 Messaging responses can contain private message bodies, usernames, attachments, addresses or negotiation details. For future messaging adapters:
@@ -56,35 +114,17 @@ Messaging responses can contain private message bodies, usernames, attachments, 
 - fixtures must use fully fictitious IDs, usernames and message metadata;
 - do not map or expose message body content in a thread-list model unless a later task explicitly requires it.
 
-The existing `DiagnosticTransport` supports JSON previews when `includeJsonPreview` is enabled globally. Any future messaging adapter or diagnostic wrapper must ensure previews are disabled for messaging routes.
+`DiagnosticTransport` now supports a per-request `diagnostics.includeResponseBodyPreview` override. `VintedMessagingClient` disables response body previews for `/messaging/main/inbox`.
 
-## Targeted DevTools Procedure Needed
+## Evidence Needed Next For VNT-104
 
-To continue VNT-103, capture a new authorized HAR focused on the conversation list:
-
-1. Open Vinted while logged in.
-2. Open DevTools > Network.
-3. Filter to `Fetch/XHR`.
-4. Clear the Network log.
-5. Open the messaging / inbox page.
-6. Wait until the conversation list is visible.
-7. Scroll the conversation list to trigger pagination if present.
-8. Optionally open one thread, then return to the list, without sending any message.
-9. Export the HAR outside the repository.
-
-Do not send messages, offers or perform any write action during the capture.
-
-## Evidence Needed Next
-
-Minimum sanitized facts needed for a thread-list route:
+Minimum sanitized facts needed for the message detail route:
 
 - method, host and sanitized path;
-- query parameter names;
+- query parameter names if present;
 - status and content type;
 - request header names only;
 - response root keys;
-- pagination fields or cursor fields;
-- thread collection key and thread field names;
-- participant/user field names;
-- last-message metadata keys, without body/content;
-- whether unread state/count is present.
+- pagination/message ordering behavior if present;
+- message metadata fields without body/content;
+- attachment/media fields, if any, sanitized and privacy-reviewed.

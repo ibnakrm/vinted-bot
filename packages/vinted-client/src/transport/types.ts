@@ -2,6 +2,10 @@ export type VintedHostClass = "site" | "api";
 
 export type VintedHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+export interface VintedRequestDiagnostics {
+  includeResponseBodyPreview?: boolean;
+}
+
 export interface VintedRequest {
   method: VintedHttpMethod;
   host: VintedHostClass;
@@ -12,6 +16,7 @@ export interface VintedRequest {
   body?: unknown;
   timeoutMs?: number;
   requestId?: string;
+  diagnostics?: VintedRequestDiagnostics;
 }
 
 export interface VintedResponse<T> {
